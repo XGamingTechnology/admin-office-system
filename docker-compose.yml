@@ -42,7 +42,7 @@ services:
       - CORS_ORIGIN=https://office.getopurtunity.online
     # 🌐 Map Host:3001 → Container:3000 (localhost only)
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:8080:3000"
     depends_on:
       db:
         condition: service_healthy
