@@ -1,72 +1,81 @@
-version: '3.8'
+# 🐳 Docker Compose - Office Admin System
+# Versi 3.8 dihapus karena obsolete di Docker Compose v2+
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: admin-office-db
+  # 🗄️ PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: office_admin_db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
-      POSTGRES_DB: ${DB_NAME:-admin_office}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+      - ./backups:/backups
     networks:
-      - admin-office-network
+      - office_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-admin}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # 🔌 Backend NestJS
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: admin-office-api
+    container_name: office_admin_backend
+    restart: unless-stopped
     environment:
-      NODE_ENV: development
-      PORT: ${BACKEND_PORT:-3000}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
-      DB_NAME: ${DB_NAME:-admin_office}
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - NODE_ENV=production
+      - PORT=3000 # 📌 Port internal container (tetap 3000)
+      - CORS_ORIGIN=https://office.getopurtunity.online
+    # 🌐 Map Host:3001 → Container:3000 (localhost only)
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     networks:
-      - admin-office-network
-    command: npm run start:dev
+      - office_network
+    command: sh -c "sleep 5 && node dist/main"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/office/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
+  # 🎨 Frontend React + Vite + Nginx
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: admin-office-frontend
+    container_name: office_admin_frontend
+    restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:${BACKEND_PORT:-3000}
+      - VITE_API_URL=https://office.getopurtunity.online/api/office
+    # 🌐 Map Host:5173 → Container:80 (localhost only)
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "127.0.0.1:5173:80"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     networks:
-      - admin-office-network
-    command: npm run dev -- --host 0.0.0.0
+      - office_network
 
 volumes:
-  postgres_data:
+  db_data:
 
 networks:
-  admin-office-network:
+  office_network:
     driver: bridge
