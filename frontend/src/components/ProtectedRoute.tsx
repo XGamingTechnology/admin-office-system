@@ -1,16 +1,16 @@
-import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, isAuthenticated }) => {
-  const location = useLocation();
-
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, isAuthenticated = true }) => {
+  // For demo purposes, we're always authenticated
+  // In a real app, you would check authentication status here
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

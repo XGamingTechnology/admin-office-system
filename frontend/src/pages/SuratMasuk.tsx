@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Surat } from '../types';
-import { fmtRupiah, getStatusColor } from '../utils/helpers';
-import { Button, Input, Badge } from '../components/ui';
+import { getStatusColor } from '../utils/helpers';
+import { Button, Badge } from '../components/ui';
 
 interface SuratMasukProps {
   data: Surat[];
