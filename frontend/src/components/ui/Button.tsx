@@ -1,11 +1,12 @@
 import React from "react";
 
+// Import types langsung dari 'react', bukan dari namespace React
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "success";
   size?: "sm" | "md" | "lg";
 }
 
-export const Button: React.FC<ButtonProps> = ({ children, variant = "primary", size = "md", className = "", ...props }): JSX.Element => {
+export const Button: React.FC<ButtonProps> = ({ children, variant = "primary", size = "md", className = "", ...props }) => {
   const baseStyles = "rounded transition font-medium inline-flex items-center justify-center";
 
   const variantStyles: Record<string, string> = {
