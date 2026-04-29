@@ -1,11 +1,11 @@
-import React from "react";
+import React, { ButtonHTMLAttributes, ReactNode } from "react";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "success";
   size?: "sm" | "md" | "lg";
 }
 
-export const Button: React.FC<ButtonProps> = ({ children, variant = "primary", size = "md", className = "", ...props }) => {
+export const Button = ({ children, variant = "primary", size = "md", className = "", ...props }: ButtonProps) => {
   const baseStyles = "rounded transition font-medium inline-flex items-center justify-center";
 
   const variantStyles: Record<string, string> = {

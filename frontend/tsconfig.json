@@ -8,15 +8,13 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "jsx": "react-jsx", // ⚠️ WAJIB ADA (untuk React 17+)
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }
