@@ -1,6 +1,5 @@
 import React from "react";
 
-// Import types langsung dari 'react', bukan dari namespace React
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "success";
   size?: "sm" | "md" | "lg";
