@@ -1,5 +1,5 @@
-# 🐳 Docker Compose - Office Admin System
-# Versi 3.8 dihapus karena obsolete di Docker Compose v2+
+# docker-compose.yml
+name: office-admin-system
 
 services:
   # 🗄️ PostgreSQL Database
@@ -38,11 +38,10 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - NODE_ENV=production
-      - PORT=3000 # 📌 Port internal container (tetap 3000)
+      - PORT=3000
       - CORS_ORIGIN=https://office.getopurtunity.online
-    # 🌐 Map Host:3001 → Container:3000 (localhost only)
     ports:
-      - "127.0.0.1:8080:3000"
+      - "127.0.0.1:8080:3000" # 🔒 Hanya localhost, akses via Nginx proxy
     depends_on:
       db:
         condition: service_healthy
@@ -61,13 +60,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://office.getopurtunity.online/api/office}
     container_name: office_admin_frontend
     restart: unless-stopped
     environment:
       - VITE_API_URL=https://office.getopurtunity.online/api/office
-    # 🌐 Map Host:5173 → Container:80 (localhost only)
     ports:
-      - "127.0.0.1:5173:80"
+      - "127.0.0.1:5173:80" # 🔒 Hanya localhost, akses via Nginx proxy
     depends_on:
       - backend
     networks:
