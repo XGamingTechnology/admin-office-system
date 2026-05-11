@@ -23,11 +23,11 @@ import { OfficeModule } from "./office/office.module";
         password: configService.get<string>("POSTGRES_PASSWORD", "admin123"),
         database: configService.get<string>("POSTGRES_DB", "office_admin"),
 
-        // ✅ FIX: List entities pattern
+        // ✅ WAJIB: Scan semua file entity agar tabel auto-created
         entities: [__dirname + "/**/*.entity{.ts,.js}"],
 
-        synchronize: true,
-        autoLoadEntities: true,
+        synchronize: true, // Auto-create tables
+        autoLoadEntities: true, // Backup: auto-load entities
         logging: ["error", "warn"],
       }),
       inject: [ConfigService],
