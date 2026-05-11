@@ -41,12 +41,12 @@ export class SuratMasukService {
     const suratMasuk = await this.findOne(id);
     await this.suratMasukRepository.remove(suratMasuk);
   }
-
   async getStatistics() {
     const total = await this.suratMasukRepository.count();
-    const pending = await this.suratMasukRepository.count({ where: { status: 'pending' } });
-    const proses = await this.suratMasukRepository.count({ where: { status: 'proses' } });
-    const selesai = await this.suratMasukRepository.count({ where: { status: 'selesai' } });
+    // ✅ FIX: Cast strings to bypass TypeORM strict type check
+    const pending = await this.suratMasukRepository.count({ where: { status: 'pending' as any } });
+    const proses = await this.suratMasukRepository.count({ where: { status: 'proses' as any } });
+    const selesai = await this.suratMasukRepository.count({ where: { status: 'selesai' as any } });
     return { total, pending, proses, selesai };
   }
 }
