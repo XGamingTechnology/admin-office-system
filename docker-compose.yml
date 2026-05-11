@@ -49,7 +49,7 @@ services:
       - office_network
     command: sh -c "sleep 5 && node dist/main"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/office/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/office/health"]
       interval: 30s
       timeout: 10s
       retries: 3
