@@ -17,20 +17,17 @@ import { OfficeModule } from "./office/office.module";
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: "postgres",
-
-        // ✅ PAKAI NAMA ENV VAR YANG SAMA DENGAN .env KAMU:
-        host: configService.get<string>("POSTGRES_HOST", "db"), // ← Default ke 'db' untuk Docker!
+        host: configService.get<string>("POSTGRES_HOST", "db"),
         port: configService.get<number>("POSTGRES_PORT", 5432),
         username: configService.get<string>("POSTGRES_USER", "admin"),
         password: configService.get<string>("POSTGRES_PASSWORD", "admin123"),
         database: configService.get<string>("POSTGRES_DB", "office_admin"),
 
-        // ✅ AUTO-SYNC DATABASE (untuk initial deploy):
-        entities: [],
-        synchronize: true, // Auto-create tables dari entity files
-        autoLoadEntities: true, // Auto-load *.entity.ts files
+        // ✅ FIX: List entities pattern
+        entities: [__dirname + "/**/*.entity{.ts,.js}"],
 
-        // Optional: minimal logging untuk production
+        synchronize: true,
+        autoLoadEntities: true,
         logging: ["error", "warn"],
       }),
       inject: [ConfigService],

@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { SuratMasukService } from './surat-masuk.service';
-import { CreateSuratMasukDto, UpdateSuratMasukDto } from './dto/surat-masuk.dto';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/common";
+import { SuratMasukService } from "./surat-masuk.service";
+import { CreateSuratMasukDto, UpdateSuratMasukDto } from "./dto/surat-masuk.dto";
 
-@Controller('office/surat-masuk')
+@Controller("office/surat-masuk")
 export class SuratMasukController {
   constructor(private readonly suratMasukService: SuratMasukService) {}
 
@@ -16,23 +16,28 @@ export class SuratMasukController {
     return this.suratMasukService.findAll();
   }
 
-  @Get('statistics')
+  @Get("statistics")
   getStatistics() {
     return this.suratMasukService.getStatistics();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return this.suratMasukService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto) {
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto) {
     return this.suratMasukService.update(id, updateSuratMasukDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
+  @Delete(":id")
+  remove(@Param("id") id: string) {
     return this.suratMasukService.remove(id);
+  }
+  // Di dalam class SuratMasukController, tambahkan:
+  @Get("health")
+  async health() {
+    return { status: "ok", timestamp: new Date().toISOString() };
   }
 }
