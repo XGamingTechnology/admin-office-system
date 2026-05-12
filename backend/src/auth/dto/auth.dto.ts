@@ -1,27 +1,28 @@
-import { IsNotEmpty, IsEmail, IsString, MinLength } from 'class-validator';
+// src/auth/dto/auth.dto.ts
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum } from "class-validator";
 
 export class LoginDto {
-  @IsNotEmpty()
-  @IsString()
-  username: string;
+  @IsEmail()
+  email: string;
 
-  @IsNotEmpty()
   @IsString()
+  @MinLength(6)
   password: string;
 }
 
 export class RegisterDto {
-  @IsNotEmpty()
   @IsString()
-  @MinLength(3)
-  username: string;
+  @MinLength(2)
+  name: string;
 
-  @IsNotEmpty()
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string; // Optional: default 'user'
 }

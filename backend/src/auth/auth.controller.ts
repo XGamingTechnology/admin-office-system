@@ -1,25 +1,28 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { AuthGuard } from '@nestjs/passport';
+// src/auth/auth.controller.ts
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus } from "@nestjs/common";
+import { AuthService } from "./auth.service";
+import { LoginDto, RegisterDto } from "./dto/auth.dto";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
-@Controller('auth')
+@Controller("auth")
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
-  }
-
-  @Post('register')
+  @Post("register")
+  @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('profile')
+  @Post("login")
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("profile")
   async getProfile(@Request() req) {
-    return this.authService.getProfile(req.user.sub);
+    // req.user sudah di-populate oleh JwtStrategy
+    return this.authService.getProfile(req.user.userId);
   }
 }
