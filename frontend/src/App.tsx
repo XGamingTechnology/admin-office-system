@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary"; // ← Import
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import SuratMasuk from "./pages/SuratMasuk";
@@ -294,7 +295,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ErrorBoundary>
+        {" "}
+        {/* ← ← ← WRAP DI SINI */}
+        <AppContent />
+      </ErrorBoundary>
     </AuthProvider>
   );
 }
