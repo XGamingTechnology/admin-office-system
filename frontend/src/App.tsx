@@ -213,7 +213,7 @@ function AppContent() {
   const { isAuthenticated, logout, loading: authLoading } = useAuth();
   const officeData = useOfficeData();
 
-  // Show loading while auth or data is loading
+  // Loading state
   if (authLoading || (isAuthenticated && officeData.loading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -225,82 +225,79 @@ function AppContent() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Not authenticated → show Login
   if (!isAuthenticated) {
     return <Login />;
   }
 
-  // Render main app layout
+  // ✅ Authenticated → render LANGSUNG tanpa <Router> wrapper
   return (
-    <Router>
-      <div className="flex min-h-screen bg-gray-50">
-        <Layout /> // ✅ FIX: Layout ambil logout dari AuthContext sendiri
-        <main className="ml-64 p-6 flex-1 min-h-screen">
-          <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-            <h1 className="text-2xl font-bold text-gray-800">Administrasi Kantor</h1>
-            <div className="flex items-center gap-4">
-              <button onClick={() => officeData.refresh()} className="p-2 text-gray-500 hover:text-blue-600 transition" title="Refresh data">
-                <i className="fa-solid fa-rotate-right"></i>
-              </button>
-              <span className="text-sm text-gray-500">
-                Welcome, <span className="font-semibold text-blue-600">Admin</span>
-              </span>
-              <button onClick={logout} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition">
-                Logout
-              </button>
-            </div>
-          </header>
+    <div className="flex min-h-screen bg-gray-50">
+      {" "}
+      {/* ← ← ← Langsung div, BUKAN Router! */}
+      <Layout />
+      <main className="ml-64 p-6 flex-1 min-h-screen">
+        <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+          <h1 className="text-2xl font-bold text-gray-800">Administrasi Kantor</h1>
+          <div className="flex items-center gap-4">
+            <button onClick={() => officeData.refresh()} className="p-2 text-gray-500 hover:text-blue-600 transition">
+              <i className="fa-solid fa-rotate-right"></i>
+            </button>
+            <span className="text-sm text-gray-500">
+              Welcome, <span className="font-semibold text-blue-600">Admin</span>
+            </span>
+            <button onClick={logout} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition">
+              Logout
+            </button>
+          </div>
+        </header>
 
-          <Routes>
-            <Route path="/" element={<Dashboard data={officeData.data} />} />
-
-            <Route
-              path="/masuk"
-              element={
-                <ProtectedRoute>
-                  <SuratMasuk
-                    data={officeData.data.masuk}
-                    onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
-                    onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
-                    onDelete={(id: number) => officeData.deleteSurat("masuk", id)}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/keluar"
-              element={
-                <ProtectedRoute>
-                  <SuratKeluar
-                    data={officeData.data.keluar}
-                    onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
-                    onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
-                    onDelete={(id: number) => officeData.deleteSurat("keluar", id)}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/reimburse"
-              element={
-                <ProtectedRoute>
-                  <Reimbursement
-                    data={officeData.data.reimburse}
-                    onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
-                    onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
-                    onDelete={(id: number) => officeData.deleteReimbursement(id)}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+        {/* Routes tetap di dalam, tapi TANPA Router wrapper */}
+        <Routes>
+          <Route path="/" element={<Dashboard data={officeData.data} />} />
+          <Route
+            path="/masuk"
+            element={
+              <ProtectedRoute>
+                <SuratMasuk
+                  data={officeData.data.masuk}
+                  onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
+                  onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
+                  onDelete={(id: number) => officeData.deleteSurat("masuk", id)}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/keluar"
+            element={
+              <ProtectedRoute>
+                <SuratKeluar
+                  data={officeData.data.keluar}
+                  onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
+                  onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
+                  onDelete={(id: number) => officeData.deleteSurat("keluar", id)}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reimburse"
+            element={
+              <ProtectedRoute>
+                <Reimbursement
+                  data={officeData.data.reimburse}
+                  onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
+                  onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
+                  onDelete={(id: number) => officeData.deleteReimbursement(id)}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
