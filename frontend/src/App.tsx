@@ -12,19 +12,6 @@ import Reimbursement from "./pages/Reimbursement";
 import Login from "./pages/Login";
 import { Surat, Reimbursement as ReimbursementType } from "./types";
 
-// Export App with AuthProvider wrapper
-function App() {
-  return (
-    <AuthProvider>
-      <ErrorBoundary>
-        {" "}
-        {/* ← ← ← WRAP DI SINI */}
-        <AppContent />
-      </ErrorBoundary>
-    </AuthProvider>
-  );
-}
-
 // API Base URL (gunakan env var dengan fallback)
 const API_URL = (import.meta as any).env?.VITE_API_URL || "https://office.getopurtunity.online/api/office";
 
@@ -207,6 +194,19 @@ const useOfficeData = () => {
     refresh: fetchData,
   };
 };
+
+// ✅ Router DI LEVEL TERATAS
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </AuthProvider>
+    </Router>
+  );
+}
 
 // Main App Content Component
 function AppContent() {

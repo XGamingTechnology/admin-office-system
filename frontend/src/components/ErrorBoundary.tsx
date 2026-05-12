@@ -1,21 +1,15 @@
-// src/components/ErrorBoundary.tsx
-import React, { ErrorInfo, ReactNode } from "react"; // ← Hanya import React, ErrorInfo, ReactNode
+import React, { Component, ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
 }
-
 interface State {
   hasError: boolean;
   error: Error | null;
 }
 
-// ✅ extends React.Component (karena import React)
-export class ErrorBoundary extends React.Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = { hasError: false, error: null };
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };

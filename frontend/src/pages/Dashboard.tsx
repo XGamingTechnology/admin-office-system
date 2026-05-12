@@ -1,75 +1,44 @@
-import React from 'react';
-import { fmtRupiah } from '../utils/helpers';
-import { Surat, Reimbursement } from '../types';
+import React from "react";
+import { Surat, Reimbursement as ReimbursementType } from "../types";
 
 interface DashboardProps {
   data: {
     masuk: Surat[];
     keluar: Surat[];
-    reimburse: Reimbursement[];
-    logs: string[];
+    reimburse: ReimbursementType[];
+    logs: string[]; // ← ← ← WAJIB ADA!
   };
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ data }) => {
-  const pendingReimburse = data.reimburse.filter(
-    (r) => r.status === 'Draft' || r.status === 'Menunggu'
-  ).length;
-
-  const totalReimburse = data.reimburse
-    .filter((r) => r.status === 'Dibayar' || r.status === 'Disetujui')
-    .reduce((sum, r) => sum + r.jumlah, 0);
-
-  const recentSuratLogs = data.logs.slice(-4).reverse();
-  const recentReimburseLogs = data.logs.slice(-4, -1).reverse();
-
   return (
-    <div className="fade-in">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
-          <p className="text-gray-500 text-sm">Surat Masuk</p>
-          <p className="text-2xl font-bold">{data.masuk.length}</p>
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Dashboard</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="font-semibold text-gray-700">Surat Masuk</h3>
+          <p className="text-2xl font-bold text-blue-600">{data.masuk.length}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500">
-          <p className="text-gray-500 text-sm">Surat Keluar</p>
-          <p className="text-2xl font-bold">{data.keluar.length}</p>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="font-semibold text-gray-700">Surat Keluar</h3>
+          <p className="text-2xl font-bold text-green-600">{data.keluar.length}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-yellow-500">
-          <p className="text-gray-500 text-sm">Reimburse Pending</p>
-          <p className="text-2xl font-bold">{pendingReimburse}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-500">
-          <p className="text-gray-500 text-sm">Total Nominal Reimburse</p>
-          <p className="text-xl font-bold">{fmtRupiah(totalReimburse)}</p>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="font-semibold text-gray-700">Reimbursement</h3>
+          <p className="text-2xl font-bold text-purple-600">{data.reimburse.length}</p>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-bold mb-3">Aktivitas Surat Terbaru</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            {recentSuratLogs.map((log, index) => (
-              <li key={index} className="border-b pb-1 last:border-0">
-                {log}
-              </li>
+      {/* Optional: Activity Logs */}
+      {data.logs.length > 0 && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="font-semibold text-gray-700 mb-2">Aktivitas Terbaru</h3>
+          <ul className="space-y-1 text-sm text-gray-600">
+            {data.logs.slice(0, 5).map((log, i) => (
+              <li key={i}>• {log}</li>
             ))}
           </ul>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-bold mb-3">Aktivitas Reimburse Terbaru</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            {recentReimburseLogs.length > 0 ? (
-              recentReimburseLogs.map((log, index) => (
-                <li key={index} className="border-b pb-1 last:border-0">
-                  {log}
-                </li>
-              ))
-            ) : (
-              <li className="text-gray-400 italic">Belum ada aktivitas</li>
-            )}
-          </ul>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
