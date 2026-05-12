@@ -1,103 +1,301 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
-import SuratMasuk from './pages/SuratMasuk';
-import SuratKeluar from './pages/SuratKeluar';
-import Reimbursement from './pages/Reimbursement';
-import Login from './pages/Login';
-import { useAppData } from './hooks/useAppData';
-import { Surat, Reimbursement as ReimbursementType } from './types';
+/// <reference types="vite/client" />
+import { useState, useEffect, useCallback } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
+import SuratMasuk from "./pages/SuratMasuk";
+import SuratKeluar from "./pages/SuratKeluar";
+import Reimbursement from "./pages/Reimbursement";
+import Login from "./pages/Login";
+import { Surat, Reimbursement as ReimbursementType } from "./types";
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Default to true for demo
-  const {
+// API Base URL (gunakan env var dengan fallback)
+const API_URL = (import.meta as any).env?.VITE_API_URL || "https://office.getopurtunity.online/api/office";
+
+// Custom hook untuk fetch & CRUD data office
+const useOfficeData = () => {
+  const { token } = useAuth();
+  const [data, setData] = useState<{
+    masuk: Surat[];
+    keluar: Surat[];
+    reimburse: ReimbursementType[];
+    logs: string[]; // ← ← ← TAMBAHKAN INI!
+  }>({ masuk: [], keluar: [], reimburse: [], logs: [] }); // ← Init dengan empty array
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const [masukRes, keluarRes, reimburseRes] = await Promise.all([fetch(`${API_URL}/surat-masuk`, { headers }), fetch(`${API_URL}/surat-keluar`, { headers }), fetch(`${API_URL}/reimbursements`, { headers })]);
+
+      if (masukRes.ok) {
+        const masukData = await masukRes.json();
+        setData((prev) => ({ ...prev, masuk: Array.isArray(masukData) ? masukData : [] }));
+      }
+      if (keluarRes.ok) {
+        const keluarData = await keluarRes.json();
+        setData((prev) => ({ ...prev, keluar: Array.isArray(keluarData) ? keluarData : [] }));
+      }
+      if (reimburseRes.ok) {
+        const reimburseData = await reimburseRes.json();
+        setData((prev) => ({ ...prev, reimburse: Array.isArray(reimburseData) ? reimburseData : [] }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch office data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // CRUD helpers
+  const addSurat = useCallback(
+    async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
+      const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
+      try {
+        const res = await fetch(`${API_URL}/${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(surat),
+        });
+        if (res.ok) {
+          const newSurat = await res.json();
+          setData((prev) => ({ ...prev, [type]: [...prev[type], newSurat] }));
+          return true;
+        }
+      } catch (error) {
+        console.error(`Failed to add ${type}:`, error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  const updateSurat = useCallback(
+    async (type: "masuk" | "keluar", surat: Surat) => {
+      const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
+      try {
+        const res = await fetch(`${API_URL}/${endpoint}/${surat.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(surat),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setData((prev) => ({ ...prev, [type]: prev[type].map((s) => (s.id === updated.id ? updated : s)) }));
+          return true;
+        }
+      } catch (error) {
+        console.error(`Failed to update ${type}:`, error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  const deleteSurat = useCallback(
+    async (type: "masuk" | "keluar", id: number) => {
+      const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
+      try {
+        const res = await fetch(`${API_URL}/${endpoint}/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setData((prev) => ({ ...prev, [type]: prev[type].filter((s) => s.id !== id) }));
+          return true;
+        }
+      } catch (error) {
+        console.error(`Failed to delete ${type}:`, error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  const addReimbursement = useCallback(
+    async (r: Omit<ReimbursementType, "id">) => {
+      try {
+        const res = await fetch(`${API_URL}/reimbursements`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(r),
+        });
+        if (res.ok) {
+          const newR = await res.json();
+          setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, newR] }));
+          return true;
+        }
+      } catch (error) {
+        console.error("Failed to add reimbursement:", error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  const updateReimbursement = useCallback(
+    async (r: ReimbursementType) => {
+      try {
+        const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(r),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setData((prev) => ({ ...prev, reimburse: prev.reimburse.map((item) => (item.id === updated.id ? updated : item)) }));
+          return true;
+        }
+      } catch (error) {
+        console.error("Failed to update reimbursement:", error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  const deleteReimbursement = useCallback(
+    async (id: number) => {
+      try {
+        const res = await fetch(`${API_URL}/reimbursements/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setData((prev) => ({ ...prev, reimburse: prev.reimburse.filter((r) => r.id !== id) }));
+          return true;
+        }
+      } catch (error) {
+        console.error("Failed to delete reimbursement:", error);
+      }
+      return false;
+    },
+    [token]
+  );
+
+  return {
     data,
-    resetData,
+    loading,
     addSurat,
     updateSurat,
     deleteSurat,
     addReimbursement,
     updateReimbursement,
     deleteReimbursement,
-  } = useAppData();
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+    refresh: fetchData,
   };
+};
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+// Main App Content Component
+function AppContent() {
+  const { isAuthenticated, logout, loading: authLoading } = useAuth();
+  const officeData = useOfficeData();
+
+  // Show loading while auth or data is loading
+  if (authLoading || (isAuthenticated && officeData.loading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <i className="fa-solid fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  // Render main app layout
   return (
     <Router>
       <div className="flex min-h-screen bg-gray-50">
-        <Layout onReset={resetData} />
+        <Layout /> // ✅ FIX: Layout ambil logout dari AuthContext sendiri
         <main className="ml-64 p-6 flex-1 min-h-screen">
-          <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
-            <h1 className="text-2xl font-bold">
-              Administrasi Kantor
-            </h1>
+          <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <h1 className="text-2xl font-bold text-gray-800">Administrasi Kantor</h1>
             <div className="flex items-center gap-4">
+              <button onClick={() => officeData.refresh()} className="p-2 text-gray-500 hover:text-blue-600 transition" title="Refresh data">
+                <i className="fa-solid fa-rotate-right"></i>
+              </button>
               <span className="text-sm text-gray-500">
-                Mode: <span className="font-semibold text-blue-600">Admin Demo</span>
+                Welcome, <span className="font-semibold text-blue-600">Admin</span>
               </span>
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                A
-              </div>
+              <button onClick={logout} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition">
+                Logout
+              </button>
             </div>
           </header>
 
           <Routes>
-            <Route
-              path="/"
-              element={<Dashboard data={data} />}
-            />
+            <Route path="/" element={<Dashboard data={officeData.data} />} />
+
             <Route
               path="/masuk"
               element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                   <SuratMasuk
-                    data={data.masuk}
-                    onAdd={(surat: Surat) => addSurat('masuk', surat)}
-                    onUpdate={(surat: Surat) => updateSurat('masuk', surat)}
-                    onDelete={(id: number) => deleteSurat('masuk', id)}
+                    data={officeData.data.masuk}
+                    onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
+                    onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
+                    onDelete={(id: number) => officeData.deleteSurat("masuk", id)}
                   />
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/keluar"
               element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                   <SuratKeluar
-                    data={data.keluar}
-                    onAdd={(surat: Surat) => addSurat('keluar', surat)}
-                    onUpdate={(surat: Surat) => updateSurat('keluar', surat)}
-                    onDelete={(id: number) => deleteSurat('keluar', id)}
+                    data={officeData.data.keluar}
+                    onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
+                    onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
+                    onDelete={(id: number) => officeData.deleteSurat("keluar", id)}
                   />
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/reimburse"
               element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProtectedRoute>
                   <Reimbursement
-                    data={data.reimburse}
-                    onAdd={(r: ReimbursementType) => addReimbursement(r)}
-                    onUpdate={(r: ReimbursementType) => updateReimbursement(r)}
-                    onDelete={(id: number) => deleteReimbursement(id)}
+                    data={officeData.data.reimburse}
+                    onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
+                    onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
+                    onDelete={(id: number) => officeData.deleteReimbursement(id)}
                   />
                 </ProtectedRoute>
               }
             />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
     </Router>
+  );
+}
+
+// Export App with AuthProvider wrapper
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
