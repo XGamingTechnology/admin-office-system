@@ -58,136 +58,209 @@ const useOfficeData = () => {
     fetchData();
   }, [fetchData]);
 
-  // CRUD callbacks - ✅ ID is string (UUID)
+  // ✅ CREATE: Tambahkan error handling + logging
   const addSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       try {
+        console.log(`[DEBUG] POST /${endpoint} payload:`, surat); // ← ← ← Debug log
+
         const res = await fetch(`${API_URL}/${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(surat),
         });
-        if (res.ok) {
-          const newSurat = await res.json(); // Backend returns full object with UUID
-          setData((prev) => ({ ...prev, [type]: [...prev[type], newSurat] }));
-          return true;
+
+        const responseData = await res.json(); // ← ← ← Baca response body even if error
+        console.log(`[DEBUG] POST /${endpoint} response:`, res.status, responseData); // ← ← ← Debug log
+
+        if (!res.ok) {
+          // ← ← ← Tampilkan error dari backend
+          const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
+          alert(`Gagal menyimpan: ${errorMsg}`);
+          console.error(`Failed to add ${type}:`, responseData);
+          return false;
         }
-      } catch (error) {
+
+        // Success: backend returns full object with UUID
+        setData((prev) => ({ ...prev, [type]: [...prev[type], responseData] }));
+        return true;
+      } catch (error: any) {
         console.error(`Failed to add ${type}:`, error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
 
+  // ✅ UPDATE: Tambahkan error handling + logging
   const updateSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Surat) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       try {
+        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, surat);
+
         const res = await fetch(`${API_URL}/${endpoint}/${surat.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(surat),
         });
-        if (res.ok) {
-          const updated = await res.json();
-          setData((prev) => ({
-            ...prev,
-            [type]: prev[type].map((s) => (s.id === updated.id ? updated : s)),
-          }));
-          return true;
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
+          alert(`Gagal update: ${errorMsg}`);
+          console.error(`Failed to update ${type}:`, responseData);
+          return false;
         }
-      } catch (error) {
+
+        setData((prev) => ({
+          ...prev,
+          [type]: prev[type].map((s) => (s.id === responseData.id ? responseData : s)),
+        }));
+        return true;
+      } catch (error: any) {
         console.error(`Failed to update ${type}:`, error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
 
+  // ✅ DELETE: Tambahkan error handling + logging
   const deleteSurat = useCallback(
     async (type: "masuk" | "keluar", id: string) => {
-      // ← ✅ id is string
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       try {
+        console.log(`[DEBUG] DELETE /${endpoint}/${id}`);
+
         const res = await fetch(`${API_URL}/${endpoint}/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          setData((prev) => ({ ...prev, [type]: prev[type].filter((s) => s.id !== id) }));
-          return true;
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] DELETE /${endpoint}/${id} response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message || `HTTP ${res.status}`;
+          alert(`Gagal hapus: ${errorMsg}`);
+          console.error(`Failed to delete ${type}:`, responseData);
+          return false;
         }
-      } catch (error) {
+
+        setData((prev) => ({ ...prev, [type]: prev[type].filter((s) => s.id !== id) }));
+        return true;
+      } catch (error: any) {
         console.error(`Failed to delete ${type}:`, error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
 
+  // ✅ CREATE Reimbursement: Tambahkan error handling + logging
   const addReimbursement = useCallback(
     async (r: Omit<ReimbursementType, "id">) => {
       try {
+        console.log(`[DEBUG] POST /reimbursements payload:`, r);
+
         const res = await fetch(`${API_URL}/reimbursements`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(r),
         });
-        if (res.ok) {
-          const newR = await res.json();
-          setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, newR] }));
-          return true;
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] POST /reimbursements response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
+          alert(`Gagal menyimpan: ${errorMsg}`);
+          console.error("Failed to add reimbursement:", responseData);
+          return false;
         }
-      } catch (error) {
+
+        setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, responseData] }));
+        return true;
+      } catch (error: any) {
         console.error("Failed to add reimbursement:", error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
 
+  // ✅ UPDATE Reimbursement: Tambahkan error handling + logging
   const updateReimbursement = useCallback(
     async (r: ReimbursementType) => {
       try {
+        console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, r);
+
         const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(r),
         });
-        if (res.ok) {
-          const updated = await res.json();
-          setData((prev) => ({
-            ...prev,
-            reimburse: prev.reimburse.map((item) => (item.id === updated.id ? updated : item)),
-          }));
-          return true;
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] PATCH /reimbursements/${r.id} response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
+          alert(`Gagal update: ${errorMsg}`);
+          console.error("Failed to update reimbursement:", responseData);
+          return false;
         }
-      } catch (error) {
+
+        setData((prev) => ({
+          ...prev,
+          reimburse: prev.reimburse.map((item) => (item.id === responseData.id ? responseData : item)),
+        }));
+        return true;
+      } catch (error: any) {
         console.error("Failed to update reimbursement:", error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
 
+  // ✅ DELETE Reimbursement: Tambahkan error handling + logging
   const deleteReimbursement = useCallback(
     async (id: string) => {
-      // ← ✅ id is string
       try {
+        console.log(`[DEBUG] DELETE /reimbursements/${id}`);
+
         const res = await fetch(`${API_URL}/reimbursements/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          setData((prev) => ({ ...prev, reimburse: prev.reimburse.filter((r) => r.id !== id) }));
-          return true;
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] DELETE /reimbursements/${id} response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message || `HTTP ${res.status}`;
+          alert(`Gagal hapus: ${errorMsg}`);
+          console.error("Failed to delete reimbursement:", responseData);
+          return false;
         }
-      } catch (error) {
+
+        setData((prev) => ({ ...prev, reimburse: prev.reimburse.filter((r) => r.id !== id) }));
+        return true;
+      } catch (error: any) {
         console.error("Failed to delete reimbursement:", error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
       }
-      return false;
     },
     [token]
   );
@@ -270,7 +343,7 @@ function AppContent() {
                   data={officeData.data.masuk}
                   onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
                   onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
-                  onDelete={(id: string) => officeData.deleteSurat("masuk", id)} // ← ✅ string
+                  onDelete={(id: string) => officeData.deleteSurat("masuk", id)}
                 />
               </ProtectedRoute>
             }
@@ -284,7 +357,7 @@ function AppContent() {
                   data={officeData.data.keluar}
                   onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
                   onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
-                  onDelete={(id: string) => officeData.deleteSurat("keluar", id)} // ← ✅ string
+                  onDelete={(id: string) => officeData.deleteSurat("keluar", id)}
                 />
               </ProtectedRoute>
             }
@@ -298,7 +371,7 @@ function AppContent() {
                   data={officeData.data.reimburse}
                   onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
                   onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
-                  onDelete={(id: string) => officeData.deleteReimbursement(id)} // ← ✅ string
+                  onDelete={(id: string) => officeData.deleteReimbursement(id)}
                 />
               </ProtectedRoute>
             }
