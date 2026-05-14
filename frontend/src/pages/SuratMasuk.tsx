@@ -1,32 +1,37 @@
-import React, { useState } from 'react';
-import { Surat } from '../types';
-import { getStatusColor } from '../utils/helpers';
-import { Button, Badge } from '../components/ui';
+// src/pages/SuratMasuk.tsx
+import React, { useState } from "react";
+import { Surat } from "../types";
+import { getStatusColor } from "../utils/helpers";
 
 interface SuratMasukProps {
   data: Surat[];
-  onAdd: (surat: Surat) => void;
-  onUpdate: (surat: Surat) => void;
-  onDelete: (id: number) => void;
+  onAdd: (s: Omit<Surat, "id">) => void;
+  onUpdate: (s: Surat) => void;
+  onDelete: (id: string) => void;
 }
 
 const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
-  const [formData, setFormData] = useState({
-    nomor: '',
-    tanggal: new Date().toISOString().split('T')[0],
-    perihal: '',
-    pihak: '',
-    status: 'Diterima',
+
+  // ✅ GANTI: formData status pakai union LENGKAP dari type Surat
+  const [formData, setFormData] = useState<{
+    nomor: string;
+    tanggal: string;
+    perihal: string;
+    pihak: string;
+    // ✅ PAKAI SEMUA STATUS DARI TYPE Surat (bukan subset)
+    status: "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim";
+  }>({
+    nomor: "",
+    tanggal: new Date().toISOString().split("T")[0],
+    perihal: "",
+    pihak: "",
+    status: "Diterima", // Default value
   });
 
-  const filteredData = data.filter(
-    (s) =>
-      s.nomor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.perihal.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = data.filter((s) => s.nomor.toLowerCase().includes(searchTerm.toLowerCase()) || s.perihal.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const openModal = (surat?: Surat) => {
     if (surat) {
@@ -41,11 +46,11 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
     } else {
       setEditingSurat(null);
       setFormData({
-        nomor: '',
-        tanggal: new Date().toISOString().split('T')[0],
-        perihal: '',
-        pihak: '',
-        status: 'Diterima',
+        nomor: "",
+        tanggal: new Date().toISOString().split("T")[0],
+        perihal: "",
+        pihak: "",
+        status: "Diterima",
       });
     }
     setIsModalOpen(true);
@@ -58,136 +63,145 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const surat: Surat = {
-      id: editingSurat?.id || Date.now(),
-      ...formData,
-    };
 
     if (editingSurat) {
-      onUpdate(surat);
+      onUpdate({ ...editingSurat, ...formData });
     } else {
-      onAdd(surat);
+      onAdd(formData);
     }
     closeModal();
   };
 
   return (
     <div className="fade-in">
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Cari nomor/perihal..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border rounded-lg w-1/3 focus:ring-2 focus:ring-blue-500 outline-none"
-        />
-        <Button onClick={() => openModal()}>
-          <i className="fa-solid fa-plus mr-2"></i> Tambah Surat Masuk
-        </Button>
+      {/* Search + Add */}
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <input type="text" placeholder="Cari nomor/perihal..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border rounded-lg w-full md:w-1/3 focus:ring-2 focus:ring-blue-500 outline-none" />
+        <button onClick={() => openModal()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2">
+          <i className="fa-solid fa-plus"></i> Tambah Surat Masuk
+        </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="p-3">No. Agenda</th>
-              <th className="p-3">Tanggal</th>
-              <th className="p-3">Perihal</th>
-              <th className="p-3">Pengirim</th>
-              <th className="p-3">Status</th>
-              <th className="p-3 text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((s) => (
-              <tr key={s.id} className="hover:bg-gray-50 border-b last:border-0">
-                <td className="p-3 font-mono text-sm">{s.nomor}</td>
-                <td className="p-3 text-sm">{s.tanggal}</td>
-                <td className="p-3">{s.perihal}</td>
-                <td className="p-3 text-sm text-gray-600">{s.pihak}</td>
-                <td className="p-3">
-                  <Badge color={getStatusColor(s.status)}>{s.status}</Badge>
-                </td>
-                <td className="p-3 text-center">
-                  <button
-                    onClick={() => openModal(s)}
-                    className="text-blue-600 hover:text-blue-800 mx-1"
-                  >
-                    <i className="fa-solid fa-pen"></i>
-                  </button>
-                  <button
-                    onClick={() => onDelete(s.id)}
-                    className="text-red-600 hover:text-red-800 mx-1"
-                  >
-                    <i className="fa-solid fa-trash"></i>
-                  </button>
-                </td>
+      {/* Table */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="p-3 font-semibold text-gray-700">No. Agenda</th>
+                <th className="p-3 font-semibold text-gray-700">Tanggal</th>
+                <th className="p-3 font-semibold text-gray-700">Perihal</th>
+                <th className="p-3 font-semibold text-gray-700">Pengirim</th>
+                <th className="p-3 font-semibold text-gray-700">Status</th>
+                <th className="p-3 font-semibold text-gray-700 text-center">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-gray-500">
+                    Tidak ada data surat masuk
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50 border-b last:border-0">
+                    <td className="p-3 font-mono text-sm text-gray-800">{s.nomor}</td>
+                    <td className="p-3 text-sm">{s.tanggal}</td>
+                    <td className="p-3 text-sm text-gray-700">{s.perihal}</td>
+                    <td className="p-3 text-sm text-gray-600">{s.pihak}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(s.status)}`}>{s.status}</span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <button onClick={() => openModal(s)} className="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
+                        <i className="fa-solid fa-pen"></i>
+                      </button>
+                      <button
+                        onClick={() => onDelete(s.id)}
+                        className="text-red-600 hover:text-red-800 mx-1 p-1"
+                        title="Hapus"
+                        onClickCapture={(e) => {
+                          if (!confirm("Hapus surat ini?")) e.preventDefault();
+                        }}
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 transform transition-all scale-95">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">
-                {editingSurat ? 'Edit Surat Masuk' : 'Tambah Surat Masuk'}
-              </h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-red-500 text-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-bold text-gray-800">{editingSurat ? "Edit Surat Masuk" : "Tambah Surat Masuk"}</h3>
+              <button onClick={closeModal} className="text-gray-500 hover:text-red-500 text-xl">
                 &times;
               </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nomor Surat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Surat</label>
                   <input
                     type="text"
                     value={formData.nomor}
                     onChange={(e) => setFormData({ ...formData, nomor: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border rounded outline-none"
+                    className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="SM-001/2024"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tanggal</label>
-                  <input
-                    type="date"
-                    value={formData.tanggal}
-                    onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border rounded outline-none"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                  <input type="date" value={formData.tanggal} onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })} required className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Perihal</label>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Perihal</label>
                 <input
                   type="text"
                   value={formData.perihal}
                   onChange={(e) => setFormData({ ...formData, perihal: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border rounded outline-none"
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: Permohonan kerjasama"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Pengirim</label>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pengirim</label>
                 <input
                   type="text"
                   value={formData.pihak}
                   onChange={(e) => setFormData({ ...formData, pihak: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border rounded outline-none"
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nama instansi/pengirim"
                 />
               </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-1">Status</label>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded outline-none"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      // ✅ Cast ke union lengkap
+                      status: e.target.value as "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim",
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Diterima">Diterima</option>
                   <option value="Didisposisikan">Didisposisikan</option>
@@ -195,11 +209,14 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
                   <option value="Selesai">Selesai</option>
                 </select>
               </div>
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="secondary" onClick={closeModal}>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" onClick={closeModal} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                   Batal
-                </Button>
-                <Button type="submit">Simpan</Button>
+                </button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                  Simpan
+                </button>
               </div>
             </form>
           </div>

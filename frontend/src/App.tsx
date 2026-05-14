@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ErrorBoundary } from "./components/ErrorBoundary"; // ← Import
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import SuratMasuk from "./pages/SuratMasuk";
@@ -12,7 +12,6 @@ import Reimbursement from "./pages/Reimbursement";
 import Login from "./pages/Login";
 import { Surat, Reimbursement as ReimbursementType } from "./types";
 
-// API Base URL (gunakan env var dengan fallback)
 const API_URL = (import.meta as any).env?.VITE_API_URL || "https://office.getopurtunity.online/api/office";
 
 // Custom hook untuk fetch & CRUD data office
@@ -22,12 +21,15 @@ const useOfficeData = () => {
     masuk: Surat[];
     keluar: Surat[];
     reimburse: ReimbursementType[];
-    logs: string[]; // ← ← ← TAMBAHKAN INI!
-  }>({ masuk: [], keluar: [], reimburse: [], logs: [] }); // ← Init dengan empty array
+    logs: string[];
+  }>({ masuk: [], keluar: [], reimburse: [], logs: [] });
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
@@ -46,7 +48,7 @@ const useOfficeData = () => {
         setData((prev) => ({ ...prev, reimburse: Array.isArray(reimburseData) ? reimburseData : [] }));
       }
     } catch (error) {
-      console.error("Failed to fetch office data:", error);
+      console.error("Failed to fetch office ", error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ const useOfficeData = () => {
     fetchData();
   }, [fetchData]);
 
-  // CRUD helpers
+  // CRUD callbacks - ✅ ID is string (UUID)
   const addSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -67,7 +69,7 @@ const useOfficeData = () => {
           body: JSON.stringify(surat),
         });
         if (res.ok) {
-          const newSurat = await res.json();
+          const newSurat = await res.json(); // Backend returns full object with UUID
           setData((prev) => ({ ...prev, [type]: [...prev[type], newSurat] }));
           return true;
         }
@@ -90,7 +92,10 @@ const useOfficeData = () => {
         });
         if (res.ok) {
           const updated = await res.json();
-          setData((prev) => ({ ...prev, [type]: prev[type].map((s) => (s.id === updated.id ? updated : s)) }));
+          setData((prev) => ({
+            ...prev,
+            [type]: prev[type].map((s) => (s.id === updated.id ? updated : s)),
+          }));
           return true;
         }
       } catch (error) {
@@ -102,7 +107,8 @@ const useOfficeData = () => {
   );
 
   const deleteSurat = useCallback(
-    async (type: "masuk" | "keluar", id: number) => {
+    async (type: "masuk" | "keluar", id: string) => {
+      // ← ✅ id is string
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       try {
         const res = await fetch(`${API_URL}/${endpoint}/${id}`, {
@@ -152,7 +158,10 @@ const useOfficeData = () => {
         });
         if (res.ok) {
           const updated = await res.json();
-          setData((prev) => ({ ...prev, reimburse: prev.reimburse.map((item) => (item.id === updated.id ? updated : item)) }));
+          setData((prev) => ({
+            ...prev,
+            reimburse: prev.reimburse.map((item) => (item.id === updated.id ? updated : item)),
+          }));
           return true;
         }
       } catch (error) {
@@ -164,7 +173,8 @@ const useOfficeData = () => {
   );
 
   const deleteReimbursement = useCallback(
-    async (id: number) => {
+    async (id: string) => {
+      // ← ✅ id is string
       try {
         const res = await fetch(`${API_URL}/reimbursements/${id}`, {
           method: "DELETE",
@@ -195,7 +205,7 @@ const useOfficeData = () => {
   };
 };
 
-// ✅ Router DI LEVEL TERATAS
+// ✅ Router DI LEVEL TERATAS - SATU-SATUNYA Router di app!
 function App() {
   return (
     <Router>
@@ -208,13 +218,12 @@ function App() {
   );
 }
 
-// Main App Content Component
 function AppContent() {
   const { isAuthenticated, logout, loading: authLoading } = useAuth();
   const officeData = useOfficeData();
 
   // Loading state
-  if (authLoading || (isAuthenticated && officeData.loading)) {
+  if (authLoading || officeData.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -233,14 +242,12 @@ function AppContent() {
   // ✅ Authenticated → render LANGSUNG tanpa <Router> wrapper
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {" "}
-      {/* ← ← ← Langsung div, BUKAN Router! */}
       <Layout />
       <main className="ml-64 p-6 flex-1 min-h-screen">
         <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
           <h1 className="text-2xl font-bold text-gray-800">Administrasi Kantor</h1>
           <div className="flex items-center gap-4">
-            <button onClick={() => officeData.refresh()} className="p-2 text-gray-500 hover:text-blue-600 transition">
+            <button onClick={() => officeData.refresh()} className="p-2 text-gray-500 hover:text-blue-600 transition" title="Refresh data">
               <i className="fa-solid fa-rotate-right"></i>
             </button>
             <span className="text-sm text-gray-500">
@@ -252,9 +259,9 @@ function AppContent() {
           </div>
         </header>
 
-        {/* Routes tetap di dalam, tapi TANPA Router wrapper */}
         <Routes>
           <Route path="/" element={<Dashboard data={officeData.data} />} />
+
           <Route
             path="/masuk"
             element={
@@ -263,11 +270,12 @@ function AppContent() {
                   data={officeData.data.masuk}
                   onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
                   onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
-                  onDelete={(id: number) => officeData.deleteSurat("masuk", id)}
+                  onDelete={(id: string) => officeData.deleteSurat("masuk", id)} // ← ✅ string
                 />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/keluar"
             element={
@@ -276,11 +284,12 @@ function AppContent() {
                   data={officeData.data.keluar}
                   onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
                   onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
-                  onDelete={(id: number) => officeData.deleteSurat("keluar", id)}
+                  onDelete={(id: string) => officeData.deleteSurat("keluar", id)} // ← ✅ string
                 />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/reimburse"
             element={
@@ -289,11 +298,12 @@ function AppContent() {
                   data={officeData.data.reimburse}
                   onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
                   onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
-                  onDelete={(id: number) => officeData.deleteReimbursement(id)}
+                  onDelete={(id: string) => officeData.deleteReimbursement(id)} // ← ✅ string
                 />
               </ProtectedRoute>
             }
           />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

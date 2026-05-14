@@ -1,29 +1,42 @@
+// src/types.ts
+
+// ✅ Surat: untuk Surat Masuk & Surat Keluar
 export interface Surat {
-  id: number;
+  id: string; // ← ← ← UUID string dari backend (BUKAN number!)
   nomor: string;
-  tanggal: string;
+  tanggal: string; // Format: 'YYYY-MM-DD'
   perihal: string;
-  pihak: string;
-  status: string;
+  pihak: string; // pengirim (masuk) / tujuan (keluar)
+  status: "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim";
+  createdAt?: string; // ISO string dari backend
+  updatedAt?: string;
 }
 
+// ✅ Reimbursement
 export interface Reimbursement {
-  id: number;
-  tanggal: string;
-  kategori: string;
+  id: string; // ← ← ← UUID string dari backend!
+  tanggal: string; // Format: 'YYYY-MM-DD'
+  kategori: "Transport" | "Makan" | "Akomodasi" | "Operasional" | "Lainnya";
   keterangan: string;
-  jumlah: number;
-  status: string;
+  jumlah: number; // Dalam Rupiah (integer)
+  status: "Draft" | "Disetujui" | "Ditolak" | "Dibayar";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface LogEntry {
-  timestamp: string;
-  message: string;
-}
-
-export interface AppState {
+// ✅ Dashboard data shape
+export interface DashboardData {
   masuk: Surat[];
   keluar: Surat[];
   reimburse: Reimbursement[];
   logs: string[];
+}
+
+// ✅ User (dari auth)
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt?: string;
 }
