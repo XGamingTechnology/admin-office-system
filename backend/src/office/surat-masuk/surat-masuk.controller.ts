@@ -1,14 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { SuratMasukService } from "./surat-masuk.service";
 import { CreateSuratMasukDto, UpdateSuratMasukDto } from "./dto/surat-masuk.dto";
+import { CloudinaryService } from "../../config/cloudinary.service";
 
 @Controller("office/surat-masuk")
 export class SuratMasukController {
-  constructor(private readonly suratMasukService: SuratMasukService) {}
+  constructor(
+    private readonly suratMasukService: SuratMasukService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Post()
-  create(@Body() createSuratMasukDto: CreateSuratMasukDto) {
-    return this.suratMasukService.create(createSuratMasukDto);
+  @UseInterceptors(FileInterceptor('file'))
+  async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
+    let fileUrl: string | undefined;
+    if (file) {
+      fileUrl = await this.cloudinaryService.uploadFile(file);
+    }
+    return this.suratMasukService.create({ ...createSuratMasukDto, fileUrl });
   }
 
   @Get()
@@ -27,7 +37,12 @@ export class SuratMasukController {
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto) {
+  @UseInterceptors(FileInterceptor('file'))
+  async update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
+    if (file) {
+      const fileUrl = await this.cloudinaryService.uploadFile(file);
+      updateSuratMasukDto.fileUrl = fileUrl;
+    }
     return this.suratMasukService.update(id, updateSuratMasukDto);
   }
 
@@ -35,7 +50,7 @@ export class SuratMasukController {
   remove(@Param("id") id: string) {
     return this.suratMasukService.remove(id);
   }
-  // Di dalam class SuratMasukController, tambahkan:
+
   @Get("health")
   async health() {
     return { status: "ok", timestamp: new Date().toISOString() };

@@ -29,6 +29,10 @@ export class CreateSuratMasukDto {
   @IsOptional()
   @IsString()
   catatan?: string;
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
 }
 
 export class UpdateSuratMasukDto {
@@ -59,4 +63,8 @@ export class UpdateSuratMasukDto {
   @IsOptional()
   @IsString()
   catatan?: string;
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
 }

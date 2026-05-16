@@ -25,6 +25,10 @@ export class CreateSuratKeluarDto {
   @IsOptional()
   @IsString()
   catatan?: string;
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
 }
 
 export class UpdateSuratKeluarDto {
@@ -55,4 +59,8 @@ export class UpdateSuratKeluarDto {
   @IsOptional()
   @IsString()
   catatan?: string;
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
 }
