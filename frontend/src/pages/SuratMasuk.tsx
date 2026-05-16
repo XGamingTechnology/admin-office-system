@@ -1,10 +1,10 @@
 // src/pages/SuratMasuk.tsx
 import React, { useState } from "react";
-import { Surat } from "../types"; // ← ← ← Use frontend type from types.ts
-import { getStatusColor, mapSuratStatusToFrontend, mapSuratStatusToBackend } from "../types";
+import { Surat } from "../types"; // ← Frontend type from types.ts
+import { getStatusColor } from "../utils/helpers"; // ← ← ← FIX: Import from utils/helpers, NOT types
 
 interface SuratMasukProps {
-  data: Surat[]; // ← ← ← Frontend type, NOT SuratMasukBackend
+  data: Surat[]; // ← Frontend type
   onAdd: (s: Omit<Surat, "id">) => void; // ← Frontend type
   onUpdate: (s: Surat) => void; // ← Frontend type
   onDelete: (id: string) => void;
@@ -15,13 +15,19 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
 
-  // ✅ formData: use frontend field names
-  const [formData, setFormData] = useState({
-    nomor: "", // ← Frontend: 'nomor' (backend will transform to 'nomorSurat')
+  // ✅ FIX: Explicit type annotation for formData to use Surat["status"] union
+  const [formData, setFormData] = useState<{
+    nomor: string;
+    tanggal: string;
+    perihal: string;
+    pihak: string;
+    status: Surat["status"]; // ← ← ← Union type from Surat interface
+  }>({
+    nomor: "",
     tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
     perihal: "",
-    pihak: "", // ← Frontend: 'pihak' (backend will transform to 'asalSurat')
-    status: "Diterima" as const, // ← Frontend status
+    pihak: "",
+    status: "Diterima", // ← No `as const` needed
   });
 
   // ✅ Filter: search by frontend field names
@@ -56,15 +62,14 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
     setEditingSurat(null);
   };
 
-  // ✅ handleSubmit: send frontend field names (App.tsx will transform)
+  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // formData already has frontend field names
     if (editingSurat) {
-      onUpdate({ ...editingSurat, ...formData }); // ← Frontend type, App.tsx transforms
+      onUpdate({ ...editingSurat, ...formData }); // ← Frontend type
     } else {
-      onAdd(formData); // ← Frontend type, App.tsx transforms to backend
+      onAdd(formData); // ← Frontend type, App.tsx transforms
     }
     closeModal();
   };
@@ -103,12 +108,12 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
               ) : (
                 filteredData.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50 border-b last:border-0">
-                    <td className="p-3 font-mono text-sm text-gray-800">{s.nomor}</td> // ← Frontend field
+                    <td className="p-3 font-mono text-sm text-gray-800">{s.nomor}</td>
                     <td className="p-3 text-sm">{s.tanggal}</td>
                     <td className="p-3 text-sm text-gray-700">{s.perihal}</td>
-                    <td className="p-3 text-sm text-gray-600">{s.pihak}</td> // ← Frontend field
+                    <td className="p-3 text-sm text-gray-600">{s.pihak}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(s.status)}`}>{s.status} // ← Frontend status (already transformed by App.tsx)</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(s.status)}`}>{s.status}</span>
                     </td>
                     <td className="p-3 text-center">
                       <button onClick={() => openModal(s)} className="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
@@ -189,7 +194,17 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as Surat["status"] })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      // ✅ FIX: Cast to Surat["status"] union type
+                      status: e.target.value as Surat["status"],
+                    })
+                  }
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                >
                   <option value="Diterima">Diterima</option>
                   <option value="Didisposisikan">Didisposisikan</option>
                   <option value="Dalam Proses">Dalam Proses</option>
