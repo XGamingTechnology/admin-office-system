@@ -1,4 +1,4 @@
-```gitignore
+```
 # Dependencies
 node_modules/
 
@@ -6,18 +6,6 @@ node_modules/
 dist/
 build/
 target/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-.ENV
-.ENV.local
 
 # Logs
 *.log
@@ -27,22 +15,25 @@ venv/
 .env.local
 *.env.*
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# OS
-.DS_Store
-Thumbs.db
+# Python cache (if any Python in project)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Compressed files
+# Compression files
 *.zip
 *.gz
 *.tar
@@ -65,4 +56,35 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Testing
+.mypy_cache/
+.pytest_cache/
+.nyc_output/
+coverage/
+
+# Gradle
+.gradle/
+
+# Node
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript/JavaScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Docker
+.dockerenv
+
+# Local configuration
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 ```

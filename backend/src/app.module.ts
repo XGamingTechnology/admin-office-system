@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 // ✅ Pastikan import AuthModule
 import { AuthModule } from "./auth/auth.module";
 import { OfficeModule } from "./office/office.module";
+import { CloudinaryModule } from "./config/cloudinary.module";
 
 @Module({
   imports: [
@@ -30,6 +31,9 @@ import { OfficeModule } from "./office/office.module";
 
     // ✅ TAMBAHKAN AuthModule DI SINI (jika belum ada)
     AuthModule,
+
+    // Cloudinary module untuk upload file
+    CloudinaryModule,
 
     OfficeModule,
   ],
