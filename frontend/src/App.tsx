@@ -387,7 +387,7 @@ function AppContent() {
               <ProtectedRoute>
                 <SuratKeluar
                   data={officeData.data.keluar}
-                  onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("keluar", surat)}
+                  onAdd={(surat: Omit<Surat, "id" | "status">) => officeData.addSurat("keluar", surat as Omit<Surat, "id">)}
                   onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
                   onDelete={(id: string) => officeData.deleteSurat("keluar", id)}
                 />
