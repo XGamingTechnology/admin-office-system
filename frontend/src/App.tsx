@@ -16,10 +16,13 @@ import {
   // Mapping functions for API boundary transformation
   mapSuratMasukBackendToFrontend,
   mapSuratMasukFrontendToBackend,
+  mapSuratMasukFrontendToBackendForUpdate,
   mapSuratKeluarBackendToFrontend,
   mapSuratKeluarFrontendToBackend,
+  mapSuratKeluarFrontendToBackendForUpdate,
   mapReimbursementBackendToFrontend,
   mapReimbursementFrontendToBackend,
+  mapReimbursementFrontendToBackendForUpdate,
 } from "./types";
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || "https://office.getopurtunity.online/api/office";
