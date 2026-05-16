@@ -61,8 +61,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-https://office.getopurtunity.online/api/office}
         - NODE_ENV=development
+        - VITE_API_URL=${VITE_API_URL:-https://office.getopurtunity.online/api/office}
     container_name: office_admin_frontend
     restart: unless-stopped
     environment:
