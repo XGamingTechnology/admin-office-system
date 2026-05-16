@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, IsDateString, IsNumber, IsEnum, Min } from 'class-validator';
-import { ReimbursementStatus } from '../entities/reimbursement.entity';
+import { IsNotEmpty, IsString, IsOptional, IsDateString, IsNumber, IsEnum, Min } from "class-validator";
+import { ReimbursementStatus } from "../entities/reimbursement.entity";
 
 export class CreateReimbursementDto {
   @IsNotEmpty()

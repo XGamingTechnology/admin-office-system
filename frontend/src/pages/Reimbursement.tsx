@@ -1,12 +1,12 @@
 // src/pages/Reimbursement.tsx
 import React, { useState } from "react";
-import type { Reimbursement as ReimbursementType } from "../types";
+import { Reimbursement as ReimbursementType } from "../types"; // ← Frontend type
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
 
 interface ReimbursementProps {
-  data: ReimbursementType[];
-  onAdd: (r: Omit<ReimbursementType, "id">) => void;
-  onUpdate: (r: ReimbursementType) => void;
+  data: ReimbursementType[]; // ← Frontend type
+  onAdd: (r: Omit<ReimbursementType, "id">) => void; // ← Frontend type
+  onUpdate: (r: ReimbursementType) => void; // ← Frontend type
   onDelete: (id: string) => void;
 }
 
@@ -15,31 +15,33 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReimbursementType | null>(null);
 
-  // ✅ FIX: Explicit type annotation untuk formData (tanpa `as const`)
+  // ✅ FIX: Explicit type annotation for formData to use union types
   const [formData, setFormData] = useState<{
     tanggal: string;
-    kategori: "Transport" | "Makan" | "Akomodasi" | "Operasional" | "Lainnya";
+    kategori: ReimbursementType["kategori"]; // ← ← ← Union type
     keterangan: string;
     jumlah: number;
-    status: "Draft" | "Disetujui" | "Ditolak" | "Dibayar";
+    status: ReimbursementType["status"]; // ← ← ← Union type
   }>({
-    tanggal: new Date().toISOString().split("T")[0],
-    kategori: "Transport", // ← Tanpa `as const`
+    tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
+    kategori: "Transport", // ← No `as const`
     keterangan: "",
     jumlah: 0,
-    status: "Draft", // ← Tanpa `as const`
+    status: "Draft", // ← No `as const`
   });
 
-  const filteredData = data.filter((r) => r.kategori.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan.toLowerCase().includes(searchTerm.toLowerCase()));
+  // ✅ Filter: search by frontend field names
+  const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  // ✅ openModal: use frontend field names
   const openModal = (item?: ReimbursementType) => {
     if (item) {
       setEditingItem(item);
       setFormData({
-        tanggal: item.tanggal,
+        tanggal: item.tanggal || new Date().toISOString().split("T")[0],
         kategori: item.kategori,
-        keterangan: item.keterangan,
-        jumlah: item.jumlah,
+        keterangan: item.keterangan || "",
+        jumlah: item.jumlah || 0,
         status: item.status,
       });
     } else {
@@ -60,13 +62,14 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     setEditingItem(null);
   };
 
+  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingItem) {
-      onUpdate({ ...editingItem, ...formData });
+      onUpdate({ ...editingItem, ...formData }); // ← Frontend type
     } else {
-      onAdd(formData);
+      onAdd(formData); // ← Frontend type, App.tsx transforms
     }
     closeModal();
   };
@@ -81,7 +84,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </button>
       </div>
 
-      {/* Table */}
+      {/* Table: Display frontend field names */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -137,7 +140,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal: Form uses frontend field names */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -151,7 +154,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pengeluaran</label>
                   <input type="date" value={formData.tanggal} onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })} required className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
@@ -161,7 +164,8 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        kategori: e.target.value as "Transport" | "Makan" | "Akomodasi" | "Operasional" | "Lainnya",
+                        // ✅ FIX: Cast to ReimbursementType["kategori"] union
+                        kategori: e.target.value as ReimbursementType["kategori"],
                       })
                     }
                     required
@@ -208,7 +212,8 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      status: e.target.value as "Draft" | "Disetujui" | "Ditolak" | "Dibayar",
+                      // ✅ FIX: Cast to ReimbursementType["status"] union
+                      status: e.target.value as ReimbursementType["status"],
                     })
                   }
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"

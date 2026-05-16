@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, IsDateString, IsEnum } from 'class-validator';
-import { SuratStatus } from '../entities/surat-masuk.entity';
+import { IsNotEmpty, IsString, IsOptional, IsDateString, IsEnum } from "class-validator";
+import { SuratStatus } from "../entities/surat-masuk.entity";
 
 export class CreateSuratMasukDto {
   @IsNotEmpty()

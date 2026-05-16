@@ -10,11 +10,21 @@ import SuratMasuk from "./pages/SuratMasuk";
 import SuratKeluar from "./pages/SuratKeluar";
 import Reimbursement from "./pages/Reimbursement";
 import Login from "./pages/Login";
-import { Surat, Reimbursement as ReimbursementType } from "./types";
+import {
+  Surat,
+  Reimbursement as ReimbursementType,
+  // Mapping functions for API boundary transformation
+  mapSuratMasukBackendToFrontend,
+  mapSuratMasukFrontendToBackend,
+  mapSuratKeluarBackendToFrontend,
+  mapSuratKeluarFrontendToBackend,
+  mapReimbursementBackendToFrontend,
+  mapReimbursementFrontendToBackend,
+} from "./types";
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || "https://office.getopurtunity.online/api/office";
 
-// Custom hook untuk fetch & CRUD data office
+// Custom hook untuk fetch & CRUD data office dengan transformation layer
 const useOfficeData = () => {
   const { token } = useAuth();
   const [data, setData] = useState<{
@@ -25,6 +35,7 @@ const useOfficeData = () => {
   }>({ masuk: [], keluar: [], reimburse: [], logs: [] });
   const [loading, setLoading] = useState(true);
 
+  // Fetch data from backend (backend → frontend transformation)
   const fetchData = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -37,15 +48,18 @@ const useOfficeData = () => {
 
       if (masukRes.ok) {
         const masukData = await masukRes.json();
-        setData((prev) => ({ ...prev, masuk: Array.isArray(masukData) ? masukData : [] }));
+        const frontendData = Array.isArray(masukData) ? masukData.map(mapSuratMasukBackendToFrontend) : [];
+        setData((prev) => ({ ...prev, masuk: frontendData }));
       }
       if (keluarRes.ok) {
         const keluarData = await keluarRes.json();
-        setData((prev) => ({ ...prev, keluar: Array.isArray(keluarData) ? keluarData : [] }));
+        const frontendData = Array.isArray(keluarData) ? keluarData.map(mapSuratKeluarBackendToFrontend) : [];
+        setData((prev) => ({ ...prev, keluar: frontendData }));
       }
       if (reimburseRes.ok) {
         const reimburseData = await reimburseRes.json();
-        setData((prev) => ({ ...prev, reimburse: Array.isArray(reimburseData) ? reimburseData : [] }));
+        const frontendData = Array.isArray(reimburseData) ? reimburseData.map(mapReimbursementBackendToFrontend) : [];
+        setData((prev) => ({ ...prev, reimburse: frontendData }));
       }
     } catch (error) {
       console.error("Failed to fetch office ", error);
@@ -58,32 +72,38 @@ const useOfficeData = () => {
     fetchData();
   }, [fetchData]);
 
-  // ✅ CREATE: Tambahkan error handling + logging
+  // ==================== SURAT CRUD (with transformation) ====================
+
+  // ✅ CREATE Surat
   const addSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
+      const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackend : mapSuratKeluarFrontendToBackend;
+      const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
+
       try {
-        console.log(`[DEBUG] POST /${endpoint} payload:`, surat); // ← ← ← Debug log
+        // Transform frontend → backend
+        const backendPayload = mapToBackend(surat);
+        console.log(`[DEBUG] POST /${endpoint} payload:`, backendPayload);
 
         const res = await fetch(`${API_URL}/${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(surat),
+          body: JSON.stringify(backendPayload),
         });
 
-        const responseData = await res.json(); // ← ← ← Baca response body even if error
-        console.log(`[DEBUG] POST /${endpoint} response:`, res.status, responseData); // ← ← ← Debug log
+        const responseData = await res.json();
+        console.log(`[DEBUG] POST /${endpoint} response:`, res.status, responseData);
 
         if (!res.ok) {
-          // ← ← ← Tampilkan error dari backend
           const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
           alert(`Gagal menyimpan: ${errorMsg}`);
-          console.error(`Failed to add ${type}:`, responseData);
           return false;
         }
 
-        // Success: backend returns full object with UUID
-        setData((prev) => ({ ...prev, [type]: [...prev[type], responseData] }));
+        // Transform backend → frontend before updating state
+        const frontendData = mapToFrontend(responseData);
+        setData((prev) => ({ ...prev, [type]: [...prev[type], frontendData] }));
         return true;
       } catch (error: any) {
         console.error(`Failed to add ${type}:`, error);
@@ -94,17 +114,22 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ UPDATE: Tambahkan error handling + logging
+  // ✅ UPDATE Surat
   const updateSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Surat) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
+      const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackend : mapSuratKeluarFrontendToBackend;
+      const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
+
       try {
-        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, surat);
+        // Transform frontend → backend
+        const backendPayload = mapToBackend(surat);
+        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, backendPayload);
 
         const res = await fetch(`${API_URL}/${endpoint}/${surat.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(surat),
+          body: JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -113,13 +138,14 @@ const useOfficeData = () => {
         if (!res.ok) {
           const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
           alert(`Gagal update: ${errorMsg}`);
-          console.error(`Failed to update ${type}:`, responseData);
           return false;
         }
 
+        // Transform backend → frontend
+        const frontendData = mapToFrontend(responseData);
         setData((prev) => ({
           ...prev,
-          [type]: prev[type].map((s) => (s.id === responseData.id ? responseData : s)),
+          [type]: prev[type].map((s) => (s.id === frontendData.id ? frontendData : s)),
         }));
         return true;
       } catch (error: any) {
@@ -131,7 +157,7 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ DELETE: Tambahkan error handling + logging
+  // ✅ DELETE Surat (no transformation needed)
   const deleteSurat = useCallback(
     async (type: "masuk" | "keluar", id: string) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -149,7 +175,6 @@ const useOfficeData = () => {
         if (!res.ok) {
           const errorMsg = responseData?.message || `HTTP ${res.status}`;
           alert(`Gagal hapus: ${errorMsg}`);
-          console.error(`Failed to delete ${type}:`, responseData);
           return false;
         }
 
@@ -164,16 +189,20 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ CREATE Reimbursement: Tambahkan error handling + logging
+  // ==================== REIMBURSEMENT CRUD (with transformation) ====================
+
+  // ✅ CREATE Reimbursement
   const addReimbursement = useCallback(
     async (r: Omit<ReimbursementType, "id">) => {
       try {
-        console.log(`[DEBUG] POST /reimbursements payload:`, r);
+        // Transform frontend → backend
+        const backendPayload = mapReimbursementFrontendToBackend(r);
+        console.log(`[DEBUG] POST /reimbursements payload:`, backendPayload);
 
         const res = await fetch(`${API_URL}/reimbursements`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(r),
+          body: JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -182,11 +211,12 @@ const useOfficeData = () => {
         if (!res.ok) {
           const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
           alert(`Gagal menyimpan: ${errorMsg}`);
-          console.error("Failed to add reimbursement:", responseData);
           return false;
         }
 
-        setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, responseData] }));
+        // Transform backend → frontend
+        const frontendData = mapReimbursementBackendToFrontend(responseData);
+        setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, frontendData] }));
         return true;
       } catch (error: any) {
         console.error("Failed to add reimbursement:", error);
@@ -197,16 +227,18 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ UPDATE Reimbursement: Tambahkan error handling + logging
+  // ✅ UPDATE Reimbursement
   const updateReimbursement = useCallback(
     async (r: ReimbursementType) => {
       try {
-        console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, r);
+        // Transform frontend → backend
+        const backendPayload = mapReimbursementFrontendToBackend(r);
+        console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, backendPayload);
 
         const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(r),
+          body: JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -215,13 +247,14 @@ const useOfficeData = () => {
         if (!res.ok) {
           const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
           alert(`Gagal update: ${errorMsg}`);
-          console.error("Failed to update reimbursement:", responseData);
           return false;
         }
 
+        // Transform backend → frontend
+        const frontendData = mapReimbursementBackendToFrontend(responseData);
         setData((prev) => ({
           ...prev,
-          reimburse: prev.reimburse.map((item) => (item.id === responseData.id ? responseData : item)),
+          reimburse: prev.reimburse.map((item) => (item.id === frontendData.id ? frontendData : item)),
         }));
         return true;
       } catch (error: any) {
@@ -233,7 +266,7 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ DELETE Reimbursement: Tambahkan error handling + logging
+  // ✅ DELETE Reimbursement (no transformation needed)
   const deleteReimbursement = useCallback(
     async (id: string) => {
       try {
@@ -250,7 +283,6 @@ const useOfficeData = () => {
         if (!res.ok) {
           const errorMsg = responseData?.message || `HTTP ${res.status}`;
           alert(`Gagal hapus: ${errorMsg}`);
-          console.error("Failed to delete reimbursement:", responseData);
           return false;
         }
 

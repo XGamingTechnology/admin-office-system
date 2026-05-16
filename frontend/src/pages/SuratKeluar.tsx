@@ -1,12 +1,12 @@
 // src/pages/SuratKeluar.tsx
 import React, { useState } from "react";
-import { Surat } from "../types";
+import { Surat } from "../types"; // ← Frontend type from types.ts
 import { getStatusColor } from "../utils/helpers";
 
 interface SuratKeluarProps {
-  data: Surat[];
-  onAdd: (s: Omit<Surat, "id">) => void;
-  onUpdate: (s: Surat) => void;
+  data: Surat[]; // ← Frontend type
+  onAdd: (s: Omit<Surat, "id">) => void; // ← Frontend type
+  onUpdate: (s: Surat) => void; // ← Frontend type
   onDelete: (id: string) => void;
 }
 
@@ -15,32 +15,33 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
 
-  // ✅ GANTI: formData status pakai union LENGKAP dari type Surat
+  // ✅ FIX: Explicit type annotation for formData to use Surat["status"] union
   const [formData, setFormData] = useState<{
     nomor: string;
     tanggal: string;
     perihal: string;
     pihak: string;
-    // ✅ PAKAI SEMUA STATUS DARI TYPE Surat (bukan subset)
-    status: "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim";
+    status: Surat["status"]; // ← ← ← Union type from Surat interface
   }>({
     nomor: "",
-    tanggal: new Date().toISOString().split("T")[0],
+    tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
     perihal: "",
     pihak: "",
-    status: "Draft", // Default value tetap boleh salah satu dari union
+    status: "Draft", // ← No `as const` needed, type is already defined above
   });
 
-  const filteredData = data.filter((s) => s.nomor.toLowerCase().includes(searchTerm.toLowerCase()) || s.perihal.toLowerCase().includes(searchTerm.toLowerCase()));
+  // ✅ Filter: search by frontend field names
+  const filteredData = data.filter((s) => s.nomor?.toLowerCase().includes(searchTerm.toLowerCase()) || s.perihal?.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  // ✅ openModal: use frontend field names
   const openModal = (surat?: Surat) => {
     if (surat) {
       setEditingSurat(surat);
       setFormData({
-        nomor: surat.nomor,
-        tanggal: surat.tanggal,
-        perihal: surat.perihal,
-        pihak: surat.pihak,
+        nomor: surat.nomor || "",
+        tanggal: surat.tanggal || new Date().toISOString().split("T")[0],
+        perihal: surat.perihal || "",
+        pihak: surat.pihak || "",
         status: surat.status,
       });
     } else {
@@ -61,13 +62,14 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
     setEditingSurat(null);
   };
 
+  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingSurat) {
-      onUpdate({ ...editingSurat, ...formData });
+      onUpdate({ ...editingSurat, ...formData }); // ← Frontend type
     } else {
-      onAdd(formData);
+      onAdd(formData); // ← Frontend type, App.tsx transforms
     }
     closeModal();
   };
@@ -82,7 +84,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         </button>
       </div>
 
-      {/* Table */}
+      {/* Table: Display frontend field names */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -136,7 +138,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal: Form uses frontend field names */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -197,16 +199,15 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      // ✅ Cast ke union lengkap
-                      status: e.target.value as "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim",
+                      // ✅ FIX: Cast to Surat["status"] union type
+                      status: e.target.value as Surat["status"],
                     })
                   }
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Draft">Draft</option>
                   <option value="Dalam Proses">Dalam Proses</option>
-                  <option value="Selesai">Terkirim</option>
-                  {/* Tambahkan opsi lain jika backend support */}
+                  <option value="Selesai">Selesai / Terkirim</option>
                 </select>
               </div>
 

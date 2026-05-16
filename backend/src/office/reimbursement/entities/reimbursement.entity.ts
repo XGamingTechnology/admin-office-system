@@ -1,15 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 export enum ReimbursementStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  PAID = 'paid',
+  PENDING = "pending",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+  PAID = "paid",
 }
 
-@Entity('reimbursements')
+@Entity("reimbursements")
 export class Reimbursement {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -21,14 +21,14 @@ export class Reimbursement {
   @Column()
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column("decimal", { precision: 10, scale: 2 })
   amount: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: "date" })
   expenseDate: Date;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: ReimbursementStatus,
     default: ReimbursementStatus.PENDING,
   })
@@ -43,7 +43,7 @@ export class Reimbursement {
   @Column({ nullable: true })
   approvedBy: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: "date", nullable: true })
   approvedAt: Date;
 
   @CreateDateColumn()
