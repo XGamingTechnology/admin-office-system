@@ -167,14 +167,17 @@ export const mapSuratKeluarBackendToFrontend = (backend: any): Surat => ({
   updatedAt: backend.updatedAt,
 });
 
-// ✅ Frontend → Backend for CREATE (NO status field)
-export const mapSuratKeluarFrontendToBackend = (frontend: Omit<Surat, "id">) => ({
-  nomorSurat: frontend.nomor,
-  tujuanSurat: frontend.pihak,
-  perihal: frontend.perihal,
-  tanggalSurat: frontend.tanggal,
-  // ❌ NO status field for CREATE
-});
+// ✅ Frontend → Backend for CREATE (NO status field - backend sets default)
+export const mapSuratKeluarFrontendToBackend = (frontend: Omit<Surat, "id">) => {
+  const result: any = {
+    nomorSurat: frontend.nomor,
+    tujuanSurat: frontend.pihak,
+    perihal: frontend.perihal,
+    tanggalSurat: frontend.tanggal,
+  };
+  // Explicitly exclude status for CREATE operations
+  return result;
+};
 
 // ✅ Frontend → Backend for UPDATE (CAN include status)
 export const mapSuratKeluarFrontendToBackendForUpdate = (frontend: Surat) => ({

@@ -5,7 +5,7 @@ import { getStatusColor } from "../utils/helpers";
 
 interface SuratKeluarProps {
   data: Surat[]; // ← Frontend type
-  onAdd: (s: Omit<Surat, "id">) => void; // ← Frontend type
+  onAdd: (s: Omit<Surat, "id" | "status">) => void; // ← Frontend type without status for CREATE
   onUpdate: (s: Surat) => void; // ← Frontend type
   onDelete: (id: string) => void;
 }
@@ -69,7 +69,9 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
     if (editingSurat) {
       onUpdate({ ...editingSurat, ...formData }); // ← Frontend type
     } else {
-      onAdd(formData); // ← Frontend type, App.tsx transforms
+      // For CREATE, exclude status field - let backend set default
+      const { status, ...formDataWithoutStatus } = formData;
+      onAdd(formDataWithoutStatus); // ← Frontend type without status, App.tsx transforms
     }
     closeModal();
   };
