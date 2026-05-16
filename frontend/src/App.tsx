@@ -118,7 +118,7 @@ const useOfficeData = () => {
   const updateSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Surat) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
-      const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackend : mapSuratKeluarFrontendToBackend;
+      const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackendForUpdate : mapSuratKeluarFrontendToBackendForUpdate;
       const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
 
       try {
@@ -232,7 +232,7 @@ const useOfficeData = () => {
     async (r: ReimbursementType) => {
       try {
         // Transform frontend → backend
-        const backendPayload = mapReimbursementFrontendToBackend(r);
+        const backendPayload = mapReimbursementFrontendToBackendForUpdate(r);
         console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, backendPayload);
 
         const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
