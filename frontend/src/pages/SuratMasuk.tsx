@@ -1,7 +1,7 @@
 // src/pages/SuratMasuk.tsx
 import React, { useState } from "react";
 import { Surat } from "../types"; // ← Frontend type from types.ts
-import { getStatusColor } from "../utils/helpers"; // ← ← ← FIX: Import from utils/helpers, NOT types
+import { getStatusColor } from "../utils/helpers"; // ← ← ← FIX: Import from utils/helpers
 
 interface SuratMasukProps {
   data: Surat[]; // ← Frontend type
@@ -15,7 +15,7 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
 
-  // ✅ FIX: Explicit type annotation for formData to use Surat["status"] union
+  // ✅ FIX: Explicit type annotation for formData with Surat["status"] union
   const [formData, setFormData] = useState<{
     nomor: string;
     tanggal: string;
