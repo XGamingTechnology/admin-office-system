@@ -5,15 +5,18 @@ import { fmtRupiah, getStatusColor } from "../utils/helpers";
 
 interface ReimbursementProps {
   data: ReimbursementType[];
+  currentUser: { name: string; role: "Admin" | "Client" }; // 👈 Role-based access
   onAdd: (r: Omit<ReimbursementType, "id">, file?: File) => void;
   onUpdate: (r: ReimbursementType, file?: File) => void;
   onDelete: (id: string) => void;
+  onApprove: (id: string, status: "approved" | "rejected") => void; // 👈 Approve/Reject handler
 }
 
-const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, onDelete }) => {
+const Reimbursement: React.FC<ReimbursementProps> = ({ data, currentUser, onAdd, onUpdate, onDelete, onApprove }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReimbursementType | null>(null);
+  const [detailItem, setDetailItem] = useState<ReimbursementType | null>(null); // 👈 State untuk modal detail
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -98,7 +101,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     }
     setSelectedFile(file);
     setUploadProgress(0);
-    
+
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -124,7 +127,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (selectedFile) {
       setIsUploading(true);
       const interval = setInterval(() => {
@@ -181,7 +184,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </button>
       </div>
 
-      {/* Table: Display frontend field names */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -203,41 +206,90 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   </td>
                 </tr>
               ) : (
-                filteredData.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50 border-b last:border-0">
-                    <td className="p-3 text-sm">{r.tanggal}</td>
-                    <td className="p-3">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{r.kategori}</span>
-                    </td>
-                    <td className="p-3 text-sm text-gray-700">{r.keterangan}</td>
-                    <td className="p-3 font-semibold text-emerald-700">{fmtRupiah(r.jumlah)}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(r.status)}`}>{r.status}</span>
-                    </td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => openModal(r)} className="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
-                        <i className="fa-solid fa-pen"></i>
-                      </button>
-                      <button
-                        onClick={() => onDelete(r.id)}
-                        className="text-red-600 hover:text-red-800 mx-1 p-1"
-                        title="Hapus"
-                        onClickCapture={(e) => {
-                          if (!confirm("Hapus reimbursement ini?")) e.preventDefault();
-                        }}
-                      >
-                        <i className="fa-solid fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filteredData.map((r) => {
+                  const isMyData = r.employeeName === currentUser.name;
+                  const isAdmin = currentUser.role === "Admin";
+                  const isPending = r.status === "pending" || r.status === "Draft";
+
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-50 border-b last:border-0">
+                      <td className="p-3 text-sm">{r.tanggal}</td>
+                      <td className="p-3">
+                        <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{r.kategori}</span>
+                      </td>
+                      <td className="p-3 text-sm text-gray-700">{r.keterangan}</td>
+                      <td className="p-3 font-semibold text-emerald-700">{fmtRupiah(r.jumlah)}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(r.status)}`}>{r.status}</span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center gap-2">
+                          {/* 👁️ Tombol Detail - Semua orang bisa lihat */}
+                          <button onClick={() => setDetailItem(r)} className="text-blue-600 hover:text-blue-800 p-1" title="Lihat Detail & Bukti">
+                            <i className="fa-solid fa-eye"></i>
+                          </button>
+
+                          {/* ✏️ Tombol Edit - Hanya pemilik atau status Draft */}
+                          {(isMyData || r.status === "Draft") && (
+                            <button onClick={() => openModal(r)} className="text-indigo-600 hover:text-indigo-800 p-1" title="Edit">
+                              <i className="fa-solid fa-pen"></i>
+                            </button>
+                          )}
+
+                          {/* 🗑️ Tombol Hapus - Hanya pemilik atau status Draft */}
+                          {(isMyData || r.status === "Draft") && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm("Yakin ingin menghapus data ini?")) {
+                                  onDelete(r.id);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 p-1"
+                              title="Hapus"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          )}
+
+                          {/* ✅❌ Tombol Approve/Reject - KHUSUS ADMIN & Status Pending */}
+                          {isAdmin && isPending && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm("Setujui reimbursement ini?")) {
+                                    onApprove(r.id, "approved");
+                                  }
+                                }}
+                                className="text-green-600 hover:text-green-800 p-1"
+                                title="Setujui"
+                              >
+                                <i className="fa-solid fa-circle-check"></i>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm("Tolak reimbursement ini?")) {
+                                    onApprove(r.id, "rejected");
+                                  }
+                                }}
+                                className="text-gray-500 hover:text-gray-700 p-1"
+                                title="Tolak"
+                              >
+                                <i className="fa-solid fa-circle-xmark"></i>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modal: Form uses frontend field names */}
+      {/* 👇 MODAL FORM (Existing - Tidak diubah) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -261,7 +313,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        // ✅ FIX: Cast to ReimbursementType["kategori"] union
                         kategori: e.target.value as ReimbursementType["kategori"],
                       })
                     }
@@ -294,7 +345,12 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 <input
                   type="number"
                   value={formData.jumlah || ""}
-                  onChange={(e) => setFormData({ ...formData, jumlah: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      jumlah: parseInt(e.target.value) || 0,
+                    })
+                  }
                   required
                   min="0"
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
@@ -330,13 +386,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
+                  <input ref={fileInputRef} type="file" accept=".pdf,image/*" onChange={handleFileSelect} className="hidden" />
                   {selectedFile ? (
                     <div className="space-y-3">
                       {previewUrl && previewUrl !== "pdf" ? (
@@ -374,10 +424,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                       )}
                       {isUploading && (
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                          ></div>
+                          <div className="bg-green-600 h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
                         </div>
                       )}
                     </div>
@@ -400,6 +447,78 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 👇 MODAL DETAIL (BARU - Untuk lihat bukti transaksi) */}
+      {detailItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-bold text-gray-800">Detail Reimbursement</h3>
+              <button onClick={() => setDetailItem(null)} className="text-gray-500 hover:text-red-500 text-xl">
+                &times;
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Tanggal:</span>
+                  <p className="font-medium">{detailItem.tanggal}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Kategori:</span>
+                  <p className="font-medium">{detailItem.kategori}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Karyawan:</span>
+                  <p className="font-medium">{detailItem.employeeName}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Status:</span>
+                  <p className={`font-medium ${getStatusColor(detailItem.status)}`}>{detailItem.status}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-gray-500 text-sm">Keterangan:</span>
+                <p className="mt-1 p-2 bg-gray-50 rounded text-sm">{detailItem.keterangan || "-"}</p>
+              </div>
+
+              <div>
+                <span className="text-gray-500 text-sm">Jumlah:</span>
+                <p className="mt-1 text-xl font-bold text-emerald-700">{fmtRupiah(detailItem.jumlah)}</p>
+              </div>
+
+              {/* Tampilan Bukti/Nota */}
+              <div className="mt-4">
+                <span className="text-gray-500 text-sm block mb-2">Bukti Transaksi:</span>
+                {detailItem.receiptUrl ? (
+                  <div className="border rounded-lg p-2 bg-gray-50">
+                    {detailItem.receiptUrl.endsWith(".pdf") ? (
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <i className="fa-solid fa-file-pdf text-3xl text-red-500"></i>
+                        <a href={detailItem.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                          Buka PDF Bukti
+                        </a>
+                      </div>
+                    ) : (
+                      <img src={detailItem.receiptUrl} alt="Bukti" className="max-h-64 mx-auto rounded border" />
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">Tidak ada bukti terlampir.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t flex justify-end">
+              <button onClick={() => setDetailItem(null)} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

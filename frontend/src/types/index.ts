@@ -14,14 +14,29 @@ export interface Surat {
   updatedAt?: string;
 }
 
-// ✅ Reimbursement (frontend display)
+// ✅ Reimbursement (UPDATED - sesuai backend API response)
 export interface Reimbursement {
   id: string; // UUID string dari backend
+
+  // Frontend fields (untuk display)
   tanggal: string; // Format: 'YYYY-MM-DD' (backend: 'expenseDate')
-  kategori: "Transport" | "Makan" | "Akomodasi" | "Operasional" | "Lainnya"; // ← Frontend: 'kategori' (backend: 'department')
-  keterangan: string; // ← Frontend: 'keterangan' (backend: 'description')
-  jumlah: number; // ← Frontend: 'jumlah' (backend: 'amount')
-  status: "Draft" | "Disetujui" | "Ditolak" | "Dibayar"; // ← Frontend status
+  kategori: "Transport" | "Makan" | "Akomodasi" | "Operasional" | "Lainnya";
+  keterangan: string;
+  jumlah: number;
+  status: "Draft" | "Disetujui" | "Ditolak" | "Dibayar" | "pending"; // ← Tambahkan "pending"
+
+  // Backend fields (untuk internal processing & API)
+  employeeName?: string; // ← TAMBAHKAN
+  department?: string; // ← TAMBAHKAN (mapped from kategori)
+  description?: string; // ← TAMBAHKAN (mapped from keterangan)
+  amount?: number; // ← TAMBAHKAN (mapped from jumlah)
+  expenseDate?: string; // ← TAMBAHKAN (mapped from tanggal)
+  receiptUrl?: string | null; // ← TAMBAHKAN (untuk gambar/PDF bukti)
+  notes?: string | null; // ← TAMBAHKAN
+  approvedBy?: string | null; // ← TAMBAHKAN
+  approvedAt?: string | null; // ← TAMBAHKAN
+
+  // Timestamps
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,7 +63,7 @@ export type AppState = DashboardData;
 
 // ✅ Helper types untuk form data (tanpa id & timestamps)
 export type SuratFormData = Omit<Surat, "id" | "createdAt" | "updatedAt">;
-export type ReimbursementFormData = Omit<Reimbursement, "id" | "createdAt" | "updatedAt">;
+export type ReimbursementFormData = Omit<Reimbursement, "id" | "createdAt" | "updatedAt" | "employeeName" | "department" | "description" | "amount" | "expenseDate" | "receiptUrl" | "notes" | "approvedBy" | "approvedAt">;
 
 // ==================== STATUS MAPPINGS ====================
 
@@ -78,7 +93,7 @@ export const mapSuratStatusToBackend = (frontendStatus: Surat["status"]): string
 // 🔄 Reimbursement Status: Backend enum → Frontend display
 export const mapReimbursementStatusToFrontend = (backendStatus: string): Reimbursement["status"] => {
   const map: Record<string, Reimbursement["status"]> = {
-    pending: "Draft",
+    pending: "Draft", // atau "pending" jika mau tampil sebagai "pending"
     approved: "Disetujui",
     rejected: "Ditolak",
     paid: "Dibayar",
@@ -90,6 +105,7 @@ export const mapReimbursementStatusToFrontend = (backendStatus: string): Reimbur
 export const mapReimbursementStatusToBackend = (frontendStatus: Reimbursement["status"]): string => {
   const map: Record<Reimbursement["status"], string> = {
     Draft: "pending",
+    pending: "pending", // ← TAMBAHKAN untuk handle "pending"
     Disetujui: "approved",
     Ditolak: "rejected",
     Dibayar: "paid",
@@ -129,7 +145,7 @@ export const mapSuratMasukBackendToFrontend = (backend: any): Surat => ({
   tanggal: backend.tanggalSurat,
   perihal: backend.perihal,
   pihak: backend.asalSurat,
-  status: mapSuratStatusToFrontend(backend.status),  // Transform status for display
+  status: mapSuratStatusToFrontend(backend.status),
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
@@ -140,7 +156,6 @@ export const mapSuratMasukFrontendToBackend = (frontend: Omit<Surat, "id">) => (
   asalSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
-  // ❌ NO status field for CREATE
 });
 
 // ✅ Frontend → Backend for UPDATE (CAN include status)
@@ -149,9 +164,8 @@ export const mapSuratMasukFrontendToBackendForUpdate = (frontend: Surat) => ({
   asalSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
-  status: mapSuratStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapSuratStatusToBackend(frontend.status),
 });
-
 
 // ==================== SURAT KELUAR: Backend ↔ Frontend ====================
 
@@ -175,7 +189,6 @@ export const mapSuratKeluarFrontendToBackend = (frontend: Omit<Surat, "id">) => 
     perihal: frontend.perihal,
     tanggalSurat: frontend.tanggal,
   };
-  // Explicitly exclude status for CREATE operations
   return result;
 };
 
@@ -185,27 +198,40 @@ export const mapSuratKeluarFrontendToBackendForUpdate = (frontend: Surat) => ({
   tujuanSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
-  status: mapSuratStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapSuratStatusToBackend(frontend.status),
 });
-
 
 // ==================== REIMBURSEMENT: Backend ↔ Frontend ====================
 
 // Backend API response → Frontend type
 export const mapReimbursementBackendToFrontend = (backend: any): Reimbursement => ({
+  // Frontend fields
   id: backend.id,
   tanggal: backend.expenseDate,
   kategori: mapDepartmentToKategori(backend.department) as Reimbursement["kategori"],
   keterangan: backend.description,
   jumlah: backend.amount,
   status: mapReimbursementStatusToFrontend(backend.status),
+
+  // Backend fields (simpan untuk keperluan internal)
+  employeeName: backend.employeeName,
+  department: backend.department,
+  description: backend.description,
+  amount: backend.amount,
+  expenseDate: backend.expenseDate,
+  receiptUrl: backend.receiptUrl,
+  notes: backend.notes,
+  approvedBy: backend.approvedBy,
+  approvedAt: backend.approvedAt,
+
+  // Timestamps
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
 
 // ✅ Frontend → Backend for CREATE (NO status field - backend sets default: PENDING)
 export const mapReimbursementFrontendToBackend = (frontend: Omit<Reimbursement, "id">) => ({
-  employeeName: "Admin",
+  employeeName: frontend.employeeName || "Admin", // atau ambil dari currentUser
   department: mapKategoriToDepartment(frontend.kategori),
   description: frontend.keterangan,
   amount: frontend.jumlah,
@@ -215,10 +241,12 @@ export const mapReimbursementFrontendToBackend = (frontend: Omit<Reimbursement, 
 
 // ✅ Frontend → Backend for UPDATE (CAN include status)
 export const mapReimbursementFrontendToBackendForUpdate = (frontend: Reimbursement) => ({
-  employeeName: "Admin",
+  employeeName: frontend.employeeName || "Admin",
   department: mapKategoriToDepartment(frontend.kategori),
   description: frontend.keterangan,
   amount: frontend.jumlah,
   expenseDate: frontend.tanggal,
-  status: mapReimbursementStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapReimbursementStatusToBackend(frontend.status),
+  notes: frontend.notes,
+  receiptUrl: frontend.receiptUrl,
 });
