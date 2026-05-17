@@ -1,12 +1,12 @@
 // src/pages/Reimbursement.tsx
-import React, { useState } from "react";
-import { Reimbursement as ReimbursementType } from "../types"; // ← Frontend type
+import React, { useState, useRef } from "react";
+import { Reimbursement as ReimbursementType } from "../types";
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
 
 interface ReimbursementProps {
-  data: ReimbursementType[]; // ← Frontend type
-  onAdd: (r: Omit<ReimbursementType, "id">) => void; // ← Frontend type
-  onUpdate: (r: ReimbursementType) => void; // ← Frontend type
+  data: ReimbursementType[];
+  onAdd: (r: Omit<ReimbursementType, "id">, file?: File) => void;
+  onUpdate: (r: ReimbursementType, file?: File) => void;
   onDelete: (id: string) => void;
 }
 
@@ -14,26 +14,31 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReimbursementType | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ FIX: Explicit type annotation for formData to use union types
   const [formData, setFormData] = useState<{
     tanggal: string;
-    kategori: ReimbursementType["kategori"]; // ← ← ← Union type
+    kategori: ReimbursementType["kategori"];
     keterangan: string;
     jumlah: number;
-    status: ReimbursementType["status"]; // ← ← ← Union type
+    status: ReimbursementType["status"];
   }>({
-    tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
-    kategori: "Transport", // ← No `as const`
+    tanggal: new Date().toISOString().split("T")[0],
+    kategori: "Transport",
     keterangan: "",
     jumlah: 0,
-    status: "Draft", // ← No `as const`
+    status: "Draft",
   });
 
-  // ✅ Filter: search by frontend field names
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+
   const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ✅ openModal: use frontend field names
   const openModal = (item?: ReimbursementType) => {
     if (item) {
       setEditingItem(item);
@@ -44,6 +49,8 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         jumlah: item.jumlah || 0,
         status: item.status,
       });
+      setPreviewUrl(null);
+      setSelectedFile(null);
     } else {
       setEditingItem(null);
       setFormData({
@@ -53,25 +60,115 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         jumlah: 0,
         status: "Draft",
       });
+      setPreviewUrl(null);
+      setSelectedFile(null);
     }
+    setUploadProgress(0);
+    setIsUploading(false);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadProgress(0);
+    setIsUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
-  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (editingItem) {
-      onUpdate({ ...editingItem, ...formData }); // ← Frontend type
-    } else {
-      onAdd(formData); // ← Frontend type, App.tsx transforms
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      validateAndSetFile(file);
     }
-    closeModal();
+  };
+
+  const validateAndSetFile = (file: File) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      alert("Format file tidak didukung! Gunakan PDF atau gambar (JPG/PNG).");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      alert("Ukuran file terlalu besar! Maksimal 5MB.");
+      return;
+    }
+    setSelectedFile(file);
+    setUploadProgress(0);
+    
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl("pdf");
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      validateAndSetFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (selectedFile) {
+      setIsUploading(true);
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+
+      try {
+        if (editingItem) {
+          await onUpdate({ ...editingItem, ...formData }, selectedFile);
+        } else {
+          await onAdd(formData, selectedFile);
+        }
+        clearInterval(interval);
+        setUploadProgress(100);
+        setTimeout(() => closeModal(), 500);
+      } catch (error) {
+        clearInterval(interval);
+        setIsUploading(false);
+        setUploadProgress(0);
+        alert("Gagal mengupload file. Silakan coba lagi.");
+      }
+    } else {
+      if (editingItem) {
+        onUpdate({ ...editingItem, ...formData });
+      } else {
+        onAdd(formData);
+      }
+      closeModal();
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -212,7 +309,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      // ✅ FIX: Cast to ReimbursementType["status"] union
                       status: e.target.value as ReimbursementType["status"],
                     })
                   }
@@ -225,12 +321,82 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 </select>
               </div>
 
+              {/* File Upload Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Bukti (PDF/Gambar)</label>
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {selectedFile ? (
+                    <div className="space-y-3">
+                      {previewUrl && previewUrl !== "pdf" ? (
+                        <div className="relative">
+                          <img src={previewUrl} alt="Preview" className="max-h-48 mx-auto rounded-lg shadow-md" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSelectedFile();
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <i className="fa-solid fa-times"></i>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-3">
+                          <i className="fa-solid fa-file-pdf text-4xl text-red-500"></i>
+                          <div className="text-left">
+                            <p className="font-medium text-gray-700">{selectedFile.name}</p>
+                            <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSelectedFile();
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <i className="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      )}
+                      {isUploading && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <i className="fa-solid fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                      <p className="text-sm text-gray-600">Klik atau drag & drop file di sini</p>
+                      <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG (Max 5MB)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                   Batal
                 </button>
-                <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
-                  Simpan
+                <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition" disabled={isUploading}>
+                  {isUploading ? "Mengupload..." : "Simpan"}
                 </button>
               </div>
             </form>
