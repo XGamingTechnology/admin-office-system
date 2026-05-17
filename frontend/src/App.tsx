@@ -79,7 +79,7 @@ const useOfficeData = () => {
 
   // ✅ CREATE Surat
   const addSurat = useCallback(
-    async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
+    async (type: "masuk" | "keluar", surat: Omit<Surat, "id">, file?: File) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackend : mapSuratKeluarFrontendToBackend;
       const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
@@ -87,12 +87,27 @@ const useOfficeData = () => {
       try {
         // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
-        console.log(`[DEBUG] POST /${endpoint} payload:`, backendPayload);
+        
+        let formDataToSend: FormData | null = null;
+        
+        if (file) {
+          // Use FormData for file upload
+          formDataToSend = new FormData();
+          formDataToSend.append("file", file);
+          // Add all backend fields to FormData
+          Object.entries(backendPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              formDataToSend.append(key, String(value));
+            }
+          });
+        }
+
+        console.log(`[DEBUG] POST /${endpoint} payload:`, file ? "FormData with file" : backendPayload);
 
         const res = await fetch(`${API_URL}/${endpoint}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(backendPayload),
+          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -119,7 +134,7 @@ const useOfficeData = () => {
 
   // ✅ UPDATE Surat
   const updateSurat = useCallback(
-    async (type: "masuk" | "keluar", surat: Surat) => {
+    async (type: "masuk" | "keluar", surat: Surat, file?: File) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
       const mapToBackend = type === "masuk" ? mapSuratMasukFrontendToBackendForUpdate : mapSuratKeluarFrontendToBackendForUpdate;
       const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
@@ -127,12 +142,27 @@ const useOfficeData = () => {
       try {
         // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
-        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, backendPayload);
+        
+        let formDataToSend: FormData | null = null;
+        
+        if (file) {
+          // Use FormData for file upload
+          formDataToSend = new FormData();
+          formDataToSend.append("file", file);
+          // Add all backend fields to FormData
+          Object.entries(backendPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              formDataToSend.append(key, String(value));
+            }
+          });
+        }
+
+        console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, file ? "FormData with file" : backendPayload);
 
         const res = await fetch(`${API_URL}/${endpoint}/${surat.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(backendPayload),
+          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
