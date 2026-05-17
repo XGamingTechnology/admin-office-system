@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UsePipes } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { SuratMasukService } from "./surat-masuk.service";
 import { CreateSuratMasukDto, UpdateSuratMasukDto } from "./dto/surat-masuk.dto";
@@ -14,7 +14,8 @@ export class SuratMasukController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  async create(@Body(new FormDataPipe()) createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
+  @UsePipes(new FormDataPipe())
+  async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
     let fileUrl: string | undefined;
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);
