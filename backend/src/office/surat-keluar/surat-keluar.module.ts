@@ -4,12 +4,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { SuratKeluarService } from "./surat-keluar.service";
 import { SuratKeluarController } from "./surat-keluar.controller";
 import { SuratKeluar } from "./entities/surat-keluar.entity";
-import { CloudinaryModule } from "../../config/cloudinary.module"; // ← ← ← ADD THIS IMPORT
+import { CloudinaryModule } from "../../config/cloudinary.module"; // ✅ TAMBAHKAN INI
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SuratKeluar]),
-    CloudinaryModule, // ← ← ← ADD THIS: Makes CloudinaryService available
+    CloudinaryModule, // ✅ TAMBAHKAN INI
   ],
   controllers: [SuratKeluarController],
   providers: [SuratKeluarService],

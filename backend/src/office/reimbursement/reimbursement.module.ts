@@ -4,12 +4,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Reimbursement } from "./entities/reimbursement.entity";
 import { ReimbursementService } from "./reimbursement.service";
 import { ReimbursementController } from "./reimbursement.controller";
-import { CloudinaryModule } from "../../config/cloudinary.module"; // ← ← ← ADD THIS IMPORT
+import { CloudinaryModule } from "../../config/cloudinary.module"; // ✅ TAMBAHKAN INI
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Reimbursement]),
-    CloudinaryModule, // ← ← ← ADD THIS: Makes CloudinaryService available
+    CloudinaryModule, // ✅ TAMBAHKAN INI
   ],
   providers: [ReimbursementService],
   controllers: [ReimbursementController],
