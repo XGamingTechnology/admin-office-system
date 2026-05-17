@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ReimbursementService } from './reimbursement.service';
 import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from './dto/reimbursement.dto';
 import { CloudinaryService } from '../../config/cloudinary.service';
+import { FormDataPipe } from '../../common/pipes/form-data.pipe';
 
 @Controller('office/reimbursements')
 export class ReimbursementController {
@@ -13,12 +14,13 @@ export class ReimbursementController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
+  async create(@Body(new FormDataPipe()) createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
     let fileUrl: string | undefined;
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);
     }
-    return this.reimbursementService.create({ ...createReimbursementDto, receiptUrl: fileUrl });
+    
+    return this.reimbursementService.create(createReimbursementDto);
   }
 
   @Get()
