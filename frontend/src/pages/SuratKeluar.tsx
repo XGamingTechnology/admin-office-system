@@ -141,8 +141,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         if (editingSurat) {
           await onUpdate({ ...editingSurat, ...formData }, selectedFile);
         } else {
-          const { status, ...formDataWithoutStatus } = formData;
-          await onAdd(formDataWithoutStatus, selectedFile);
+          await onAdd(formData, selectedFile);
         }
         clearInterval(interval);
         setUploadProgress(100);
@@ -157,8 +156,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
       if (editingSurat) {
         onUpdate({ ...editingSurat, ...formData });
       } else {
-        const { status, ...formDataWithoutStatus } = formData;
-        onAdd(formDataWithoutStatus);
+        onAdd(formData);
       }
       closeModal();
     }
