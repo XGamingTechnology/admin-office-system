@@ -1,12 +1,13 @@
 // src/pages/SuratMasuk.tsx
 import React, { useState } from "react";
 import { Surat } from "../types"; // ← Frontend type from types.ts
-import { getStatusColor } from "../utils/helpers"; // ← ← ← FIX: Import from utils/helpers
+import { getStatusColor } from "../utils/helpers"; // ← From utils/helpers
 
+// ✅ Interface props: onAdd now accepts optional file
 interface SuratMasukProps {
-  data: Surat[]; // ← Frontend type
-  onAdd: (s: Omit<Surat, "id">) => void; // ← Frontend type
-  onUpdate: (s: Surat) => void; // ← Frontend type
+  data: Surat[];
+  onAdd: (s: Omit<Surat, "id"> & { file?: File }) => void; // ← Accept File
+  onUpdate: (s: Surat) => void;
   onDelete: (id: string) => void;
 }
 
@@ -15,25 +16,27 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
 
-  // ✅ FIX: Explicit type annotation for formData with Surat["status"] union
+  // ✅ formData: include optional file field
   const [formData, setFormData] = useState<{
     nomor: string;
     tanggal: string;
     perihal: string;
     pihak: string;
-    status: Surat["status"]; // ← ← ← Union type from Surat interface
+    status: Surat["status"];
+    file?: File | null; // ← ← ← File state for upload
   }>({
     nomor: "",
     tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
     perihal: "",
     pihak: "",
-    status: "Diterima", // ← No `as const` needed
+    status: "Diterima",
+    file: null,
   });
 
   // ✅ Filter: search by frontend field names
   const filteredData = data.filter((s) => s.nomor?.toLowerCase().includes(searchTerm.toLowerCase()) || s.perihal?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ✅ openModal: use frontend field names
+  // ✅ openModal: reset file when opening modal
   const openModal = (surat?: Surat) => {
     if (surat) {
       setEditingSurat(surat);
@@ -43,6 +46,7 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
         perihal: surat.perihal || "",
         pihak: surat.pihak || "",
         status: surat.status,
+        file: null, // Reset file on edit
       });
     } else {
       setEditingSurat(null);
@@ -52,6 +56,7 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
         perihal: "",
         pihak: "",
         status: "Diterima",
+        file: null,
       });
     }
     setIsModalOpen(true);
@@ -62,21 +67,27 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
     setEditingSurat(null);
   };
 
-  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
+  // ✅ handleSubmit: include file in payload if selected
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prepare payload: include file if exists
+    const payload = {
+      ...formData,
+      file: formData.file || undefined, // Remove if null
+    };
+
     if (editingSurat) {
-      onUpdate({ ...editingSurat, ...formData }); // ← Frontend type
+      onUpdate({ ...editingSurat, ...formData }); // Frontend type
     } else {
-      onAdd(formData); // ← Frontend type, App.tsx transforms
+      onAdd(payload); // ← Send payload with optional file
     }
     closeModal();
   };
 
   return (
     <div className="fade-in">
-      {/* Search + Add */}
+      {/* Search + Add Button */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <input type="text" placeholder="Cari nomor/perihal..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border rounded-lg w-full md:w-1/3 focus:ring-2 focus:ring-blue-500 outline-none" />
         <button onClick={() => openModal()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2">
@@ -138,7 +149,7 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
         </div>
       </div>
 
-      {/* Modal: Form uses frontend field names */}
+      {/* Modal: Form with file upload */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -192,6 +203,27 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
                 />
               </div>
 
+              {/* ✅ NEW: File Upload Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lampiran / Foto</label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormData({ ...formData, file });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {formData.file && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ File terpilih: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
@@ -199,7 +231,6 @@ const SuratMasuk: React.FC<SuratMasukProps> = ({ data, onAdd, onUpdate, onDelete
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      // ✅ FIX: Cast to Surat["status"] union type
                       status: e.target.value as Surat["status"],
                     })
                   }

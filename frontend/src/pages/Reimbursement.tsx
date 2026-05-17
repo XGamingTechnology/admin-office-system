@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { Reimbursement as ReimbursementType } from "../types"; // ← Frontend type
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
 
+// ✅ Interface props: onAdd accepts optional file, excludes status for CREATE
 interface ReimbursementProps {
-  data: ReimbursementType[]; // ← Frontend type
-  onAdd: (r: Omit<ReimbursementType, "id">) => void; // ← Frontend type
-  onUpdate: (r: ReimbursementType) => void; // ← Frontend type
+  data: ReimbursementType[];
+  onAdd: (r: Omit<ReimbursementType, "id" | "status"> & { file?: File }) => void; // ← No status, optional file
+  onUpdate: (r: ReimbursementType) => void;
   onDelete: (id: string) => void;
 }
 
@@ -15,25 +16,27 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReimbursementType | null>(null);
 
-  // ✅ FIX: Explicit type annotation for formData to use union types
+  // ✅ formData: include optional file field
   const [formData, setFormData] = useState<{
     tanggal: string;
-    kategori: ReimbursementType["kategori"]; // ← ← ← Union type
+    kategori: ReimbursementType["kategori"];
     keterangan: string;
     jumlah: number;
-    status: ReimbursementType["status"]; // ← ← ← Union type
+    status: ReimbursementType["status"];
+    file?: File | null; // ← ← ← File state for upload
   }>({
     tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
-    kategori: "Transport", // ← No `as const`
+    kategori: "Transport",
     keterangan: "",
     jumlah: 0,
-    status: "Draft", // ← No `as const`
+    status: "Draft",
+    file: null,
   });
 
   // ✅ Filter: search by frontend field names
   const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ✅ openModal: use frontend field names
+  // ✅ openModal: reset file when opening modal
   const openModal = (item?: ReimbursementType) => {
     if (item) {
       setEditingItem(item);
@@ -43,6 +46,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         keterangan: item.keterangan || "",
         jumlah: item.jumlah || 0,
         status: item.status,
+        file: null, // Reset file on edit
       });
     } else {
       setEditingItem(null);
@@ -52,6 +56,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         keterangan: "",
         jumlah: 0,
         status: "Draft",
+        file: null,
       });
     }
     setIsModalOpen(true);
@@ -62,14 +67,21 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     setEditingItem(null);
   };
 
-  // ✅ handleSubmit: send frontend field names (App.tsx transforms to backend)
+  // ✅ handleSubmit: exclude status for CREATE, include file if selected
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingItem) {
-      onUpdate({ ...editingItem, ...formData }); // ← Frontend type
+      // UPDATE: send full object with status
+      onUpdate({ ...editingItem, ...formData });
     } else {
-      onAdd(formData); // ← Frontend type, App.tsx transforms
+      // CREATE: exclude status (backend sets default: PENDING), include file if exists
+      const { status, ...formDataWithoutStatus } = formData;
+      const payload = {
+        ...formDataWithoutStatus,
+        file: formData.file || undefined, // Remove if null
+      };
+      onAdd(payload); // ← Send payload without status, with optional file
     }
     closeModal();
   };
@@ -140,7 +152,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </div>
       </div>
 
-      {/* Modal: Form uses frontend field names */}
+      {/* Modal: Form with file upload */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -164,7 +176,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        // ✅ FIX: Cast to ReimbursementType["kategori"] union
                         kategori: e.target.value as ReimbursementType["kategori"],
                       })
                     }
@@ -205,6 +216,27 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 />
               </div>
 
+              {/* ✅ NEW: File Upload Input for receipt/bukti */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bukti / Lampiran</label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormData({ ...formData, file });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {formData.file && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ File terpilih: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
@@ -212,17 +244,18 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      // ✅ FIX: Cast to ReimbursementType["status"] union
                       status: e.target.value as ReimbursementType["status"],
                     })
                   }
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!editingItem} // ← Disable for CREATE (backend sets default: PENDING)
                 >
                   <option value="Draft">Draft / Menunggu</option>
                   <option value="Disetujui">Disetujui</option>
                   <option value="Ditolak">Ditolak</option>
                   <option value="Dibayar">Sudah Dibayar</option>
                 </select>
+                {!editingItem && <p className="text-xs text-gray-500 mt-1">* Status akan diatur otomatis saat pengajuan</p>}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
