@@ -5,18 +5,18 @@ import { PassportModule } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-import { UsersModule } from "../users/users.module"; // or your user module
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 // Import guards & decorators
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { RolesGuard } from "./guards/roles.guard"; // ← ← ← ADD THIS
+import { RolesGuard } from "./guards/roles.guard";
 
 @Module({
   imports: [
     PassportModule,
-    UsersModule,
     ConfigModule,
+    // ❌ REMOVE: import { UsersModule } from "../users/users.module";
+    // ❌ REMOVE: UsersModule from imports array if it doesn't exist
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -26,17 +26,8 @@ import { RolesGuard } from "./guards/roles.guard"; // ← ← ← ADD THIS
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    JwtAuthGuard, // ← Already exists
-    RolesGuard, // ← ← ← ADD THIS
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
   controllers: [AuthController],
-  exports: [
-    AuthService,
-    JwtAuthGuard,
-    RolesGuard, // ← ← ← ADD THIS (so other modules can use it)
-  ],
+  exports: [AuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
