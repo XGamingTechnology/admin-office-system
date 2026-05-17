@@ -54,8 +54,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: "Admin" | "Client" | string; // 👈 TAMBAHKAN INI
   createdAt?: string;
+  updatedAt?: string;
 }
 
 // ✅ Type alias untuk kompatibilitas legacy

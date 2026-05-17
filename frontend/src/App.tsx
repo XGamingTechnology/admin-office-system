@@ -87,9 +87,9 @@ const useOfficeData = () => {
       try {
         // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
-        
+
         let formDataToSend: FormData | null = null;
-        
+
         if (file) {
           // Use FormData for file upload
           formDataToSend = new FormData();
@@ -142,9 +142,9 @@ const useOfficeData = () => {
       try {
         // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
-        
+
         let formDataToSend: FormData | null = null;
-        
+
         if (file) {
           // Use FormData for file upload
           formDataToSend = new FormData();
@@ -226,16 +226,28 @@ const useOfficeData = () => {
 
   // ✅ CREATE Reimbursement
   const addReimbursement = useCallback(
-    async (r: Omit<ReimbursementType, "id">) => {
+    async (r: Omit<ReimbursementType, "id">, file?: File) => {
       try {
         // Transform frontend → backend
         const backendPayload = mapReimbursementFrontendToBackend(r);
-        console.log(`[DEBUG] POST /reimbursements payload:`, backendPayload);
+
+        let formDataToSend: FormData | null = null;
+        if (file) {
+          formDataToSend = new FormData();
+          formDataToSend.append("file", file);
+          Object.entries(backendPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              formDataToSend.append(key, String(value));
+            }
+          });
+        }
+
+        console.log(`[DEBUG] POST /reimbursements payload:`, file ? "FormData with file" : backendPayload);
 
         const res = await fetch(`${API_URL}/reimbursements`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(backendPayload),
+          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -262,16 +274,28 @@ const useOfficeData = () => {
 
   // ✅ UPDATE Reimbursement
   const updateReimbursement = useCallback(
-    async (r: ReimbursementType) => {
+    async (r: ReimbursementType, file?: File) => {
       try {
         // Transform frontend → backend
         const backendPayload = mapReimbursementFrontendToBackendForUpdate(r);
-        console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, backendPayload);
+
+        let formDataToSend: FormData | null = null;
+        if (file) {
+          formDataToSend = new FormData();
+          formDataToSend.append("file", file);
+          Object.entries(backendPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              formDataToSend.append(key, String(value));
+            }
+          });
+        }
+
+        console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, file ? "FormData with file" : backendPayload);
 
         const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(backendPayload),
+          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
         const responseData = await res.json();
@@ -292,6 +316,45 @@ const useOfficeData = () => {
         return true;
       } catch (error: any) {
         console.error("Failed to update reimbursement:", error);
+        alert(`Network error: ${error.message || "Cek console untuk detail"}`);
+        return false;
+      }
+    },
+    [token]
+  );
+
+  // ✅ APPROVE/REJECT Reimbursement (Admin Only)
+  const handleApprove = useCallback(
+    async (id: string, status: "approved" | "rejected") => {
+      try {
+        console.log(`[DEBUG] PATCH /reimbursements/${id} (approve):`, { status });
+
+        const res = await fetch(`${API_URL}/reimbursements/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, // 👈 PENTING: Token auth
+          body: JSON.stringify({ status }),
+        });
+
+        const responseData = await res.json();
+        console.log(`[DEBUG] PATCH /reimbursements/${id} response:`, res.status, responseData);
+
+        if (!res.ok) {
+          const errorMsg = responseData?.message || `HTTP ${res.status}`;
+          alert(`Gagal mengubah status: ${errorMsg}`);
+          return false;
+        }
+
+        // Transform backend → frontend & update state
+        const frontendData = mapReimbursementBackendToFrontend(responseData);
+        setData((prev) => ({
+          ...prev,
+          reimburse: prev.reimburse.map((item) => (item.id === frontendData.id ? frontendData : item)),
+        }));
+
+        alert(`Berhasil mengubah status menjadi ${frontendData.status}`);
+        return true;
+      } catch (error: any) {
+        console.error("Error saat approve:", error);
         alert(`Network error: ${error.message || "Cek console untuk detail"}`);
         return false;
       }
@@ -339,6 +402,7 @@ const useOfficeData = () => {
     addReimbursement,
     updateReimbursement,
     deleteReimbursement,
+    handleApprove, // 👈 Export fungsi approve ke component
     refresh: fetchData,
   };
 };
@@ -357,7 +421,7 @@ function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated, logout, loading: authLoading } = useAuth();
+  const { isAuthenticated, logout, loading: authLoading, user } = useAuth(); // 👈 Ambil 'user' dari auth context
   const officeData = useOfficeData();
 
   // Loading state
@@ -389,7 +453,7 @@ function AppContent() {
               <i className="fa-solid fa-rotate-right"></i>
             </button>
             <span className="text-sm text-gray-500">
-              Welcome, <span className="font-semibold text-blue-600">Admin</span>
+              Welcome, <span className="font-semibold text-blue-600">{user?.name || "Admin"}</span>
             </span>
             <button onClick={logout} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition">
               Logout
@@ -406,8 +470,8 @@ function AppContent() {
               <ProtectedRoute>
                 <SuratMasuk
                   data={officeData.data.masuk}
-                  onAdd={(surat: Omit<Surat, "id">) => officeData.addSurat("masuk", surat)}
-                  onUpdate={(surat: Surat) => officeData.updateSurat("masuk", surat)}
+                  onAdd={(surat: Omit<Surat, "id">, file?: File) => officeData.addSurat("masuk", surat, file)}
+                  onUpdate={(surat: Surat, file?: File) => officeData.updateSurat("masuk", surat, file)}
                   onDelete={(id: string) => officeData.deleteSurat("masuk", id)}
                 />
               </ProtectedRoute>
@@ -420,8 +484,8 @@ function AppContent() {
               <ProtectedRoute>
                 <SuratKeluar
                   data={officeData.data.keluar}
-                  onAdd={(surat: Omit<Surat, "id" | "status">) => officeData.addSurat("keluar", surat as Omit<Surat, "id">)}
-                  onUpdate={(surat: Surat) => officeData.updateSurat("keluar", surat)}
+                  onAdd={(surat: Omit<Surat, "id" | "status">, file?: File) => officeData.addSurat("keluar", surat as Omit<Surat, "id">, file)}
+                  onUpdate={(surat: Surat, file?: File) => officeData.updateSurat("keluar", surat, file)}
                   onDelete={(id: string) => officeData.deleteSurat("keluar", id)}
                 />
               </ProtectedRoute>
@@ -433,10 +497,18 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Reimbursement
+                  // 👇 PERBAIKAN 1: Gunakan officeData.data.reimburse (bukan data.reimburse)
                   data={officeData.data.reimburse}
-                  onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
-                  onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
-                  onDelete={(id: string) => officeData.deleteReimbursement(id)}
+                  // 👇 PERBAIKAN 2: Gunakan nama fungsi yang benar dari hook (addReimbursement, bukan handleAdd...)
+                  onAdd={officeData.addReimbursement}
+                  onUpdate={officeData.updateReimbursement}
+                  onDelete={officeData.deleteReimbursement}
+                  // 👇 PERBAIKAN 3: Tambahkan props baru yang dibutuhkan komponen Reimbursement
+                  currentUser={{
+                    name: user?.name || "Admin",
+                    role: (user?.role as "Admin" | "Client") || "Client",
+                  }}
+                  onApprove={officeData.handleApprove}
                 />
               </ProtectedRoute>
             }
