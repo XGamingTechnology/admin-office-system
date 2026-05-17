@@ -15,7 +15,7 @@ export class SuratMasukController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   @UsePipes(new FormDataPipe())
-  async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
+  async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: any) {
     let fileUrl: string | undefined;
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);
@@ -40,7 +40,7 @@ export class SuratMasukController {
 
   @Patch(":id")
   @UseInterceptors(FileInterceptor('file'))
-  async update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto, @UploadedFile() file?: Express.Multer.File) {
+  async update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto, @UploadedFile() file?: any) {
     if (file) {
       const fileUrl = await this.cloudinaryService.uploadFile(file);
       updateSuratMasukDto.fileUrl = fileUrl;

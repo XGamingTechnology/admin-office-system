@@ -15,7 +15,7 @@ export class ReimbursementController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   @UsePipes(new FormDataPipe())
-  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
+  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: any) {
     let fileUrl: string | undefined;
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);
