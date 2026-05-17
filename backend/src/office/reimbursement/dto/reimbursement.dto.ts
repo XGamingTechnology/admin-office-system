@@ -26,6 +26,10 @@ export class CreateReimbursementDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  receiptUrl?: string;
 }
 
 export class UpdateReimbursementDto {

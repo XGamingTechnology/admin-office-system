@@ -1,14 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ReimbursementService } from './reimbursement.service';
 import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from './dto/reimbursement.dto';
+import { CloudinaryService } from '../../config/cloudinary.service';
 
 @Controller('office/reimbursements')
 export class ReimbursementController {
-  constructor(private readonly reimbursementService: ReimbursementService) {}
+  constructor(
+    private readonly reimbursementService: ReimbursementService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Post()
-  create(@Body() createReimbursementDto: CreateReimbursementDto) {
-    return this.reimbursementService.create(createReimbursementDto);
+  @UseInterceptors(FileInterceptor('file'))
+  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
+    let receiptUrl: string | undefined;
+    if (file) {
+      receiptUrl = await this.cloudinaryService.uploadFile(file);
+    }
+    return this.reimbursementService.create({ ...createReimbursementDto, receiptUrl });
   }
 
   @Get()

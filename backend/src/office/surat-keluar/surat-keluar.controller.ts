@@ -1,14 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { SuratKeluarService } from './surat-keluar.service';
-import { CreateSuratKeluarDto, UpdateSuratKeluarDto } from './dto/surat-keluar.dto';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { SuratKeluarService } from "./surat-keluar.service";
+import { CreateSuratKeluarDto, UpdateSuratKeluarDto } from "./dto/surat-keluar.dto";
+import { CloudinaryService } from "../../config/cloudinary.service";
 
-@Controller('office/surat-keluar')
+@Controller("office/surat-keluar")
 export class SuratKeluarController {
-  constructor(private readonly suratKeluarService: SuratKeluarService) {}
+  constructor(
+    private readonly suratKeluarService: SuratKeluarService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Post()
-  create(@Body() createSuratKeluarDto: CreateSuratKeluarDto) {
-    return this.suratKeluarService.create(createSuratKeluarDto);
+  @UseInterceptors(FileInterceptor('file'))
+  async create(@Body() createSuratKeluarDto: CreateSuratKeluarDto, @UploadedFile() file?: Express.Multer.File) {
+    let fileUrl: string | undefined;
+    if (file) {
+      fileUrl = await this.cloudinaryService.uploadFile(file);
+    }
+    return this.suratKeluarService.create({ ...createSuratKeluarDto, fileUrl });
   }
 
   @Get()
