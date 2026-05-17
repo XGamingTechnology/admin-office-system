@@ -2,38 +2,42 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-dist/
-build/
-target/
-
-# Logs
-*.log
-
-# Environment variables
+# Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Logs and temp files
+*.log
 *.tmp
 
-# Python cache (if any Python in project)
+# Editors
+.vscode/
+.idea/
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
+venv/
+.venv/
+env/
+ENV/
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
+# Build outputs
+dist/
+build/
+target/
+*.out
+*.exe
+*.dll
+*.so
+*.a
+*.obj
 
-# Compression files
+# Compressed files
 *.zip
 *.gz
 *.tar
@@ -52,39 +56,8 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 
-# OS generated files
+# System files
 .DS_Store
 Thumbs.db
-
-# Testing
-.mypy_cache/
-.pytest_cache/
-.nyc_output/
-coverage/
-
-# Gradle
-.gradle/
-
-# Node
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# TypeScript/JavaScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Docker
-.dockerenv
-
-# Local configuration
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 ```

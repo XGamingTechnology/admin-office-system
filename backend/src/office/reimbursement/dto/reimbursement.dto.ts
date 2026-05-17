@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, IsOptional, IsDateString, IsNumber, IsEnum, Min } from "class-validator";
+import { Transform } from "class-transformer";
 import { ReimbursementStatus } from "../entities/reimbursement.entity";
 
 export class CreateReimbursementDto {
@@ -15,6 +16,7 @@ export class CreateReimbursementDto {
   description: string;
 
   @IsNotEmpty()
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   @Min(0)
   amount: number;
@@ -26,6 +28,10 @@ export class CreateReimbursementDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  receiptUrl?: string;
 }
 
 export class UpdateReimbursementDto {
