@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UsePipes } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ReimbursementService } from './reimbursement.service';
 import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from './dto/reimbursement.dto';
@@ -14,7 +14,8 @@ export class ReimbursementController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  async create(@Body(new FormDataPipe()) createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
+  @UsePipes(new FormDataPipe())
+  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File) {
     let fileUrl: string | undefined;
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);

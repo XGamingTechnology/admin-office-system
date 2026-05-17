@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes } from '@nestjs/common';
 import { SuratKeluarService } from './surat-keluar.service';
 import { CreateSuratKeluarDto, UpdateSuratKeluarDto } from './dto/surat-keluar.dto';
 import { FormDataPipe } from '../../common/pipes/form-data.pipe';
@@ -8,7 +8,8 @@ export class SuratKeluarController {
   constructor(private readonly suratKeluarService: SuratKeluarService) {}
 
   @Post()
-  create(@Body(new FormDataPipe()) createSuratKeluarDto: CreateSuratKeluarDto) {
+  @UsePipes(new FormDataPipe())
+  create(@Body() createSuratKeluarDto: CreateSuratKeluarDto) {
     return this.suratKeluarService.create(createSuratKeluarDto);
   }
 
