@@ -1,14 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 export enum SuratStatus {
-  PENDING = 'pending',
-  PROSES = 'proses',
-  SELESAI = 'selesai',
+  PENDING = "pending",
+  PROSES = "proses",
+  SELESAI = "selesai",
 }
 
-@Entity('surat_masuk')
+@Entity("surat_masuk")
 export class SuratMasuk {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -20,17 +20,17 @@ export class SuratMasuk {
   @Column()
   perihal: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: "date" })
   tanggalSurat: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: "date", nullable: true })
   tanggalDiterima: Date;
 
   @Column({ nullable: true })
   disposisi: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: SuratStatus,
     default: SuratStatus.PENDING,
   })
@@ -47,4 +47,7 @@ export class SuratMasuk {
 
   @UpdateDateColumn()
   updatedAt: Date;
+  // Tambahkan di dalam class SuratMasuk:
+  @Column({ nullable: true })
+  createdBy: string;
 }

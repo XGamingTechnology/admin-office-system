@@ -51,4 +51,7 @@ export class Reimbursement {
 
   @UpdateDateColumn()
   updatedAt: Date;
+  // Tambahkan di dalam class Reimbursement:
+  @Column({ nullable: true })
+  createdBy: string; // ← ← ← User ID who created this record
 }

@@ -1,23 +1,39 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Reimbursement, ReimbursementStatus } from './entities/reimbursement.entity';
-import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from './dto/reimbursement.dto';
+// src/office/reimbursement/reimbursement.service.ts
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Reimbursement, ReimbursementStatus } from "./entities/reimbursement.entity";
+import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from "./dto/reimbursement.dto";
 
 @Injectable()
 export class ReimbursementService {
   constructor(
     @InjectRepository(Reimbursement)
-    private reimbursementRepository: Repository<Reimbursement>,
+    private reimbursementRepository: Repository<Reimbursement>
   ) {}
 
-  async create(createReimbursementDto: CreateReimbursementDto): Promise<Reimbursement> {
-    const reimbursement = this.reimbursementRepository.create(createReimbursementDto);
+  // ✅ CREATE: Support createdBy & fileUrl
+  async create(createReimbursementDto: CreateReimbursementDto & { createdBy?: string; fileUrl?: string }): Promise<Reimbursement> {
+    const reimbursement = this.reimbursementRepository.create({
+      ...createReimbursementDto,
+      createdBy: createReimbursementDto.createdBy,
+      receiptUrl: createReimbursementDto.fileUrl, // Map fileUrl to receiptUrl
+      // status defaults to PENDING via entity @Column({ default: ... })
+    });
     return this.reimbursementRepository.save(reimbursement);
   }
 
+  // ✅ READ ALL: Return all (for admin)
   async findAll(): Promise<Reimbursement[]> {
-    return this.reimbursementRepository.find({ order: { createdAt: 'DESC' } });
+    return this.reimbursementRepository.find({ order: { createdAt: "DESC" } });
+  }
+
+  // ✅ READ BY USER: Filter by createdBy (for non-admin)
+  async findAllByUser(userId: string): Promise<Reimbursement[]> {
+    return this.reimbursementRepository.find({
+      where: { createdBy: userId },
+      order: { createdAt: "DESC" },
+    });
   }
 
   async findOne(id: string): Promise<Reimbursement> {
@@ -28,9 +44,19 @@ export class ReimbursementService {
     return reimbursement;
   }
 
-  async update(id: string, updateReimbursementDto: UpdateReimbursementDto): Promise<Reimbursement> {
+  // ✅ UPDATE: Support fileUrl
+  async update(id: string, updateReimbursementDto: UpdateReimbursementDto & { fileUrl?: string }): Promise<Reimbursement> {
     const reimbursement = await this.findOne(id);
-    Object.assign(reimbursement, updateReimbursementDto);
+
+    // Handle fileUrl update
+    if (updateReimbursementDto.fileUrl) {
+      reimbursement.receiptUrl = updateReimbursementDto.fileUrl;
+    }
+
+    // Update other fields (excluding fileUrl which we handled above)
+    const { fileUrl, ...updateData } = updateReimbursementDto;
+    Object.assign(reimbursement, updateData);
+
     return this.reimbursementRepository.save(reimbursement);
   }
 
@@ -50,26 +76,39 @@ export class ReimbursementService {
     await this.reimbursementRepository.remove(reimbursement);
   }
 
+  // ✅ STATISTICS: Type-safe enum queries
   async getStatistics() {
     const total = await this.reimbursementRepository.count();
-    const pending = await this.reimbursementRepository.count({ where: { status: ReimbursementStatus.PENDING } });
-    const approved = await this.reimbursementRepository.count({ where: { status: ReimbursementStatus.APPROVED } });
-    const rejected = await this.reimbursementRepository.count({ where: { status: ReimbursementStatus.REJECTED } });
-    const paid = await this.reimbursementRepository.count({ where: { status: ReimbursementStatus.PAID } });
-    
+
+    // Use enum values directly for type safety
+    const pending = await this.reimbursementRepository.count({
+      where: { status: ReimbursementStatus.PENDING },
+    });
+    const approved = await this.reimbursementRepository.count({
+      where: { status: ReimbursementStatus.APPROVED },
+    });
+    const rejected = await this.reimbursementRepository.count({
+      where: { status: ReimbursementStatus.REJECTED },
+    });
+    const paid = await this.reimbursementRepository.count({
+      where: { status: ReimbursementStatus.PAID },
+    });
+
     const totalAmountResult = await this.reimbursementRepository
-      .createQueryBuilder('reimbursement')
-      .select('SUM(reimbursement.amount)', 'total')
-      .where('reimbursement.status IN (:...statuses)', { statuses: [ReimbursementStatus.APPROVED, ReimbursementStatus.PAID] })
+      .createQueryBuilder("reimbursement")
+      .select("SUM(reimbursement.amount)", "total")
+      .where("reimbursement.status IN (:...statuses)", {
+        statuses: [ReimbursementStatus.APPROVED, ReimbursementStatus.PAID],
+      })
       .getRawOne();
-    
-    return { 
-      total, 
-      pending, 
-      approved, 
-      rejected, 
+
+    return {
+      total,
+      pending,
+      approved,
+      rejected,
       paid,
-      totalAmount: parseFloat(totalAmountResult.total) || 0
+      totalAmount: parseFloat(totalAmountResult?.total) || 0,
     };
   }
 }
