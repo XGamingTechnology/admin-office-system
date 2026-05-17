@@ -1,10 +1,6 @@
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { User } from "../types"; // 👈 IMPORT User dari types.ts (SUDAH ADA role)
 
 export interface AuthContextType {
   user: User | null;
@@ -31,8 +27,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const savedToken = localStorage.getItem("office_token");
     const savedUser = localStorage.getItem("office_user");
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        // Jika parsing gagal, bersihkan localStorage
+        localStorage.removeItem("office_token");
+        localStorage.removeItem("office_user");
+      }
     }
     setLoading(false);
   }, []);
@@ -52,9 +54,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!response.ok) throw new Error(data.message || "Login failed");
 
       setToken(data.access_token);
-      setUser(data.user);
+
+      // 👈 Pastikan user object dari backend memiliki field 'role'
+      // Jika backend tidak mengirim 'role', tambahkan default value:
+      const userData: User = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role || "Client", // 👈 TAMBAHKAN role dengan default
+        createdAt: data.user.createdAt,
+        updatedAt: data.user.updatedAt,
+      };
+
+      setUser(userData);
       localStorage.setItem("office_token", data.access_token);
-      localStorage.setItem("office_user", JSON.stringify(data.user));
+      localStorage.setItem("office_user", JSON.stringify(userData));
       return true;
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat login");
@@ -70,7 +84,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem("office_user");
   };
 
-  return <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token, loading, error, clearError }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        login,
+        logout,
+        isAuthenticated: !!token,
+        loading,
+        error,
+        clearError,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
