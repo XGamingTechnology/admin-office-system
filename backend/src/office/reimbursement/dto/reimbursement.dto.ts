@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, IsDateString, IsNumber, IsEnum, Min } from "class-validator";
+// src/office/reimbursement/reimbursement.dto.ts
+import { IsNotEmpty, IsString, IsOptional, Matches, IsNumber, IsEnum, Min } from "class-validator";
 import { Transform } from "class-transformer";
 import { ReimbursementStatus } from "../entities/reimbursement.entity";
 
@@ -22,7 +23,10 @@ export class CreateReimbursementDto {
   amount: number;
 
   @IsNotEmpty()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX: Terima format YYYY-MM-DD dari HTML input
+    message: "expenseDate must be in YYYY-MM-DD format",
+  })
   expenseDate: string;
 
   @IsOptional()
@@ -53,7 +57,10 @@ export class UpdateReimbursementDto {
   amount?: number;
 
   @IsOptional()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX
+    message: "expenseDate must be in YYYY-MM-DD format",
+  })
   expenseDate?: string;
 
   @IsOptional()

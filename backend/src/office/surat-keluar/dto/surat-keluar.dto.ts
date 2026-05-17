@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, IsDateString, IsEnum } from 'class-validator';
-import { SuratStatus } from '../entities/surat-keluar.entity';
+import { IsNotEmpty, IsString, IsOptional, Matches, IsEnum } from "class-validator"; // ← Change import
+import { SuratStatus } from "../entities/surat-keluar.entity";
 
 export class CreateSuratKeluarDto {
   @IsNotEmpty()
@@ -15,11 +15,17 @@ export class CreateSuratKeluarDto {
   perihal: string;
 
   @IsNotEmpty()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX: Accept YYYY-MM-DD
+    message: "tanggalSurat must be in YYYY-MM-DD format",
+  })
   tanggalSurat: string;
 
   @IsOptional()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX: Accept YYYY-MM-DD
+    message: "tanggalKirim must be in YYYY-MM-DD format",
+  })
   tanggalKirim?: string;
 
   @IsOptional()
@@ -28,7 +34,7 @@ export class CreateSuratKeluarDto {
 
   @IsOptional()
   @IsString()
-  fileUrl?: string;
+  fileUrl?: string; // ← Good: Optional for manual URL assignment
 }
 
 export class UpdateSuratKeluarDto {
@@ -45,7 +51,10 @@ export class UpdateSuratKeluarDto {
   perihal?: string;
 
   @IsOptional()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX
+    message: "tanggalSurat must be in YYYY-MM-DD format",
+  })
   tanggalSurat?: string;
 
   @IsOptional()
@@ -53,7 +62,10 @@ export class UpdateSuratKeluarDto {
   status?: SuratStatus;
 
   @IsOptional()
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    // ← ← ← FIX
+    message: "tanggalKirim must be in YYYY-MM-DD format",
+  })
   tanggalKirim?: string;
 
   @IsOptional()
