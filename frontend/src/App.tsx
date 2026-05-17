@@ -94,7 +94,7 @@ const useOfficeData = () => {
           // Use FormData for file upload
           formDataToSend = new FormData();
           formDataToSend.append("file", file);
-          // Add all backend fields to FormData
+          // Add all backend fields to FormData as strings
           Object.entries(backendPayload).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
               formDataToSend.append(key, String(value));
@@ -103,10 +103,13 @@ const useOfficeData = () => {
         }
 
         console.log(`[DEBUG] POST /${endpoint} payload:`, file ? "FormData with file" : backendPayload);
+        if (formDataToSend) {
+          console.log("[DEBUG] FormData entries:", Array.from(formDataToSend.entries()));
+        }
 
         const res = await fetch(`${API_URL}/${endpoint}`, {
           method: "POST",
-          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
@@ -149,7 +152,7 @@ const useOfficeData = () => {
           // Use FormData for file upload
           formDataToSend = new FormData();
           formDataToSend.append("file", file);
-          // Add all backend fields to FormData
+          // Add all backend fields to FormData as strings
           Object.entries(backendPayload).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
               formDataToSend.append(key, String(value));
@@ -158,10 +161,13 @@ const useOfficeData = () => {
         }
 
         console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, file ? "FormData with file" : backendPayload);
+        if (formDataToSend) {
+          console.log("[DEBUG] FormData entries:", Array.from(formDataToSend.entries()));
+        }
 
         const res = await fetch(`${API_URL}/${endpoint}/${surat.id}`, {
           method: "PATCH",
-          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
@@ -243,10 +249,13 @@ const useOfficeData = () => {
         }
 
         console.log(`[DEBUG] POST /reimbursements payload:`, file ? "FormData with file" : backendPayload);
+        if (formDataToSend) {
+          console.log("[DEBUG] FormData entries:", Array.from(formDataToSend.entries()));
+        }
 
         const res = await fetch(`${API_URL}/reimbursements`, {
           method: "POST",
-          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
@@ -291,10 +300,13 @@ const useOfficeData = () => {
         }
 
         console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, file ? "FormData with file" : backendPayload);
+        if (formDataToSend) {
+          console.log("[DEBUG] FormData entries:", Array.from(formDataToSend.entries()));
+        }
 
         const res = await fetch(`${API_URL}/reimbursements/${r.id}`, {
           method: "PATCH",
-          headers: file ? {} : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: file ? formDataToSend : JSON.stringify(backendPayload),
         });
 
