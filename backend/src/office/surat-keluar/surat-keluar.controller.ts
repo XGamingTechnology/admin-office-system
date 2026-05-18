@@ -17,12 +17,8 @@ export class SuratKeluarController {
   @Post()
   @Roles("admin", "user")
   @UsePipes(new FormDataPipe())
-  async create(
-    @Body() createSuratKeluarDto: CreateSuratKeluarDto,
-    @Req() req?: Request // ✅ FIX: Made optional
-  ) {
+  async create(@Body() createSuratKeluarDto: CreateSuratKeluarDto, @Req() req?: Request) {
     const userId = (req as any)?.user?.sub;
-
     return this.suratKeluarService.create({
       ...createSuratKeluarDto,
       createdBy: userId,
@@ -32,12 +28,11 @@ export class SuratKeluarController {
   @Get()
   @Roles("admin", "user")
   findAll(@Req() req?: Request) {
-    // ✅ FIX: Made optional
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
 
     if (role !== "admin") {
-      return this.suratKeluarService.findAllByUser(userId);
+      return this.suratKeluarService.findAllByUser(user?.sub);
     }
     return this.suratKeluarService.findAll();
   }
@@ -51,12 +46,11 @@ export class SuratKeluarController {
   @Get(":id")
   @Roles("admin", "user")
   async findOne(@Param("id") id: string, @Req() req?: Request) {
-    // ✅ FIX: Made optional
     const item = await this.suratKeluarService.findOne(id);
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
 
-    if (role !== "admin" && item.createdBy !== userId) {
+    if (role !== "admin" && item.createdBy !== user?.sub) {
       throw new ForbiddenException("You can only view your own outgoing letters");
     }
     return item;
@@ -64,20 +58,22 @@ export class SuratKeluarController {
 
   @Patch(":id")
   @Roles("admin", "user")
-  async update(
-    @Param("id") id: string,
-    @Body() updateSuratKeluarDto: UpdateSuratKeluarDto,
-    @Req() req?: Request // ✅ FIX: Made optional
-  ) {
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+  async update(@Param("id") id: string, @Body() updateSuratKeluarDto: UpdateSuratKeluarDto, @Req() req?: Request) {
+    const user = (req as any)?.user;
+    const userId = user?.sub;
+    const role = this._extractRole(user);
+
+    console.log(`🔐 [RBAC] update surat-keluar ${id}: role="${role}", userId="${userId}"`);
 
     const currentItem = await this.suratKeluarService.findOne(id);
 
+    // ✅ Admin bisa edit SEMUA, user hanya bisa edit milik sendiri
     if (role !== "admin" && currentItem.createdBy !== userId) {
+      console.log(`🔐 [RBAC] Forbidden: user ${userId} tried to edit item owned by ${currentItem.createdBy}`);
       throw new ForbiddenException("You can only edit your own outgoing letters");
     }
 
+    // ✅ User biasa tidak boleh ubah status
     if (role !== "admin" && updateSuratKeluarDto.status) {
       throw new ForbiddenException("Only admin can change letter status");
     }
@@ -89,5 +85,12 @@ export class SuratKeluarController {
   @Roles("admin")
   remove(@Param("id") id: string) {
     return this.suratKeluarService.remove(id);
+  }
+
+  // ✅ Helper: Flexible role extraction with fallback
+  private _extractRole(user: any): string {
+    if (!user) return "";
+    const role = user?.role || user?.userRole || user?.roles || user?.permission || "";
+    return String(role).toLowerCase().trim();
   }
 }

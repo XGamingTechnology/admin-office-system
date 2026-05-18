@@ -23,20 +23,11 @@ export class ReimbursementController {
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
   @UsePipes(new FormDataPipe())
-  async create(
-    @Body() createReimbursementDto: CreateReimbursementDto,
-    @UploadedFile() file?: Express.Multer.File,
-    @Req() req?: Request // ✅ FIX: Tambahkan ? agar optional (setelah parameter optional file)
-  ) {
+  async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File, @Req() req?: Request) {
     let fileUrl: string | undefined;
+    if (file) fileUrl = await this.cloudinaryService.uploadFile(file);
 
-    if (file) {
-      fileUrl = await this.cloudinaryService.uploadFile(file);
-    }
-
-    // ✅ Gunakan optional chaining untuk safety
     const userId = (req as any)?.user?.sub;
-
     return this.reimbursementService.create({
       ...createReimbursementDto,
       fileUrl,
@@ -47,12 +38,11 @@ export class ReimbursementController {
   @Get()
   @Roles("admin", "user")
   findAll(@Req() req?: Request) {
-    // ✅ FIX: Made optional
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
 
     if (role !== "admin") {
-      return this.reimbursementService.findAllByUser(userId);
+      return this.reimbursementService.findAllByUser(user?.sub);
     }
     return this.reimbursementService.findAll();
   }
@@ -66,12 +56,11 @@ export class ReimbursementController {
   @Get(":id")
   @Roles("admin", "user")
   async findOne(@Param("id") id: string, @Req() req?: Request) {
-    // ✅ FIX: Made optional
     const item = await this.reimbursementService.findOne(id);
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
 
-    if (role !== "admin" && item.createdBy !== userId) {
+    if (role !== "admin" && item.createdBy !== user?.sub) {
       throw new ForbiddenException("You can only view your own reimbursements");
     }
     return item;
@@ -79,21 +68,22 @@ export class ReimbursementController {
 
   @Patch(":id")
   @Roles("admin", "user")
-  async update(
-    @Param("id") id: string,
-    @Body() updateReimbursementDto: UpdateReimbursementDto,
-    @Req() req?: Request // ✅ FIX: Made optional
-  ) {
-    const userId = (req as any)?.user?.sub;
-    const role = (req as any)?.user?.role;
+  async update(@Param("id") id: string, @Body() updateReimbursementDto: UpdateReimbursementDto, @Req() req?: Request) {
+    const user = (req as any)?.user;
+    const userId = user?.sub;
+    const role = this._extractRole(user);
+
+    console.log(`🔐 [RBAC] update reimbursement ${id}: role="${role}", userId="${userId}"`);
 
     const currentItem = await this.reimbursementService.findOne(id);
 
+    // ✅ Admin bisa edit SEMUA, user hanya bisa edit milik sendiri
     if (role !== "admin" && currentItem.createdBy !== userId) {
+      console.log(`🔐 [RBAC] Forbidden: user ${userId} tried to edit item owned by ${currentItem.createdBy}`);
       throw new ForbiddenException("You can only edit your own reimbursements");
     }
 
-    // ✅ FIX: Hapus approvedAt check (tidak ada di UpdateReimbursementDto)
+    // ✅ User biasa tidak boleh ubah status/approval
     if (role !== "admin") {
       if (updateReimbursementDto.status || updateReimbursementDto.approvedBy) {
         throw new ForbiddenException("Only admin can change status or approval fields");
@@ -108,11 +98,7 @@ export class ReimbursementController {
 
   @Post(":id/approve")
   @Roles("admin")
-  approve(
-    @Param("id") id: string,
-    @Body() approveDto: ApproveReimbursementDto,
-    @Req() req?: Request // ✅ FIX: Made optional
-  ) {
+  approve(@Param("id") id: string, @Body() approveDto: ApproveReimbursementDto, @Req() req?: Request) {
     const approvedBy = (req as any)?.user?.email || "admin";
     return this.reimbursementService.approve(id, approveDto, approvedBy);
   }
@@ -121,5 +107,12 @@ export class ReimbursementController {
   @Roles("admin")
   remove(@Param("id") id: string) {
     return this.reimbursementService.remove(id);
+  }
+
+  // ✅ Helper: Flexible role extraction with fallback
+  private _extractRole(user: any): string {
+    if (!user) return "";
+    const role = user?.role || user?.userRole || user?.roles || user?.permission || "";
+    return String(role).toLowerCase().trim();
   }
 }

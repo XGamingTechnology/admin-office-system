@@ -117,25 +117,39 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(s.status)}`}>{s.status}</span>
                     </td>
                     <td className="p-3 text-center whitespace-nowrap">
-                      {/* ✅ Edit Button - High Contrast */}
-                      <button
-                        onClick={() => openModal(s)}
-                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
-                        title="Edit"
-                      >
-                        <i className="fa-solid fa-pen text-sm"></i>
-                      </button>
-                      {/* ✅ Delete Button - High Contrast */}
-                      <button
-                        onClick={() => onDelete(s.id)}
-                        className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
-                        title="Hapus"
-                        onClickCapture={(e) => {
-                          if (!confirm("Hapus surat ini?")) e.preventDefault();
-                        }}
-                      >
-                        <i className="fa-solid fa-trash text-sm"></i>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* ✅ Edit Button - Professional Style */}
+                        <button
+                          onClick={() => openModal(s)}
+                          className="group relative inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+                          title="Edit data"
+                          aria-label="Edit"
+                        >
+                          <i className="fa-solid fa-pen text-xs group-hover:scale-110 transition-transform"></i>
+                          {/* Hover tooltip */}
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Edit
+                          </span>
+                        </button>
+
+                        {/* ✅ Delete Button - Professional Style */}
+                        <button
+                          onClick={() => {
+                            if (confirm("Hapus data ini? Tindakan ini tidak dapat dibatalkan.")) {
+                              onDelete(s.id);
+                            }
+                          }}
+                          className="group relative inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
+                          title="Hapus data"
+                          aria-label="Delete"
+                        >
+                          <i className="fa-solid fa-trash text-xs group-hover:scale-110 transition-transform"></i>
+                          {/* Hover tooltip */}
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Hapus
+                          </span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
