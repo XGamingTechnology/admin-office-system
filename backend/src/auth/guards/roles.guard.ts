@@ -1,4 +1,4 @@
-// src/auth/guards/roles.guard.ts
+// backend/src/auth/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
@@ -7,20 +7,29 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // Get required roles from @Roles() decorator
     const requiredRoles = this.reflector.get<string[]>("roles", context.getHandler());
-
-    // If no roles required, allow access
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    // Get request and user from context
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // Set by JwtAuthGuard
+    const user = request.user;
 
-    // Check if user exists and has required role
-    if (!user || !user.role || !requiredRoles.includes(user.role)) {
+    if (!user) {
+      throw new ForbiddenException("Access denied: no user found in request");
+    }
+
+    // ✅ FIX: Flexible role extraction with fallback + normalization
+    const rawRole = user?.role || user?.userRole || user?.roles || user?.permission || "";
+    const userRole = String(rawRole).toLowerCase().trim();
+
+    // 🐛 DEBUG: Log role check (bisa dihapus nanti)
+    console.log(`🔐 [RolesGuard] Checking: required=[${requiredRoles}], userRole="${userRole}", rawUser=${JSON.stringify(user)}`);
+
+    const hasRole = requiredRoles.some((role) => role.toLowerCase() === userRole);
+
+    if (!hasRole) {
+      console.log(`🔐 [RolesGuard] Forbidden: userRole="${userRole}" not in [${requiredRoles}]`);
       throw new ForbiddenException("Access denied: insufficient permissions");
     }
 

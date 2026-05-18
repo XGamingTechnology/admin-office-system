@@ -81,9 +81,16 @@ export class SuratKeluarController {
     return this.suratKeluarService.update(id, updateSuratKeluarDto);
   }
 
+  // Di SuratKeluarController.delete() method:
   @Delete(":id")
   @Roles("admin")
-  remove(@Param("id") id: string) {
+  remove(@Param("id") id: string, @Req() req?: Request) {
+    const user = (req as any)?.user;
+    const rawRole = user?.role || user?.userRole || user?.roles || user?.permission || "";
+    const userRole = String(rawRole).toLowerCase().trim();
+
+    console.log(`🔐 [RBAC DELETE] User: ${user?.email}, role: "${userRole}", trying to delete ${id}`);
+
     return this.suratKeluarService.remove(id);
   }
 

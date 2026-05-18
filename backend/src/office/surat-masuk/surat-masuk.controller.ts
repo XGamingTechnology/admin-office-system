@@ -99,7 +99,10 @@ export class SuratMasukController {
 
   @Delete(":id")
   @Roles("admin")
-  remove(@Param("id") id: string) {
+  remove(@Param("id") id: string, @Req() req?: Request) {
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
+    console.log(`🔐 [RBAC DELETE] surat-masuk ${id}: role="${role}", userId="${user?.sub}"`);
     return this.suratMasukService.remove(id);
   }
 
