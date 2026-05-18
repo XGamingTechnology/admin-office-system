@@ -105,13 +105,19 @@ export class ReimbursementController {
 
   @Delete(":id")
   @Roles("admin")
-  remove(@Param("id") id: string, @Req() req?: Request) {
+  async remove(@Param("id") id: string, @Req() req?: Request) {
     // Optional: Debug log
     const user = (req as any)?.user;
-    const role = this._extractRole(user);
-    console.log(`🔐 [RBAC DELETE] reimbursement ${id}: role="${role}", userId="${user?.sub}"`);
+    console.log(`🔐 [RBAC DELETE] reimbursement ${id} by ${user?.email}`);
 
-    return this.reimbursementService.remove(id); // ← ✅ BENAR: reimbursementService
+    await this.reimbursementService.remove(id);
+
+    // ✅ RETURN JSON response (bukan void)
+    return {
+      success: true,
+      message: "Reimbursement deleted successfully",
+      id: id,
+    };
   }
   // ✅ Helper: Flexible role extraction with fallback
   private _extractRole(user: any): string {

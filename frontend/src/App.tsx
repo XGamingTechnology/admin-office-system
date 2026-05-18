@@ -9,12 +9,12 @@ import Dashboard from "./pages/Dashboard";
 import SuratMasuk from "./pages/SuratMasuk";
 import SuratKeluar from "./pages/SuratKeluar";
 import Reimbursement from "./pages/Reimbursement";
-import AdminControl from "./pages/AdminControl"; // ← ← ← TAMBAHKAN IMPORT INI
+import AdminControl from "./pages/AdminControl";
 import Login from "./pages/Login";
 import {
   Surat,
   Reimbursement as ReimbursementType,
-  User, // ← ← ← TAMBAHKAN IMPORT TYPE USER
+  User,
   // Mapping functions for API boundary transformation
   mapSuratMasukBackendToFrontend,
   mapSuratMasukFrontendToBackend,
@@ -156,6 +156,7 @@ const useOfficeData = () => {
     [token]
   );
 
+  // ✅ FIX: Handle empty response untuk DELETE
   const deleteSurat = useCallback(
     async (type: "masuk" | "keluar", id: string) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -167,7 +168,17 @@ const useOfficeData = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const responseData = await res.json();
+        // ✅ FIX: Handle empty response (204 No Content atau body kosong)
+        let responseData: any = {};
+        const text = await res.text();
+        if (text) {
+          try {
+            responseData = JSON.parse(text);
+          } catch (e) {
+            console.warn(`[WARN] DELETE response not JSON: ${text.substring(0, 100)}`);
+          }
+        }
+
         console.log(`[DEBUG] DELETE /${endpoint}/${id} response:`, res.status, responseData);
 
         if (!res.ok) {
@@ -176,6 +187,7 @@ const useOfficeData = () => {
           return false;
         }
 
+        // Update local state
         setData((prev) => ({ ...prev, [type]: prev[type].filter((s) => s.id !== id) }));
         return true;
       } catch (error: any) {
@@ -258,6 +270,7 @@ const useOfficeData = () => {
     [token]
   );
 
+  // ✅ FIX: Handle empty response untuk DELETE reimbursement
   const deleteReimbursement = useCallback(
     async (id: string) => {
       try {
@@ -268,7 +281,17 @@ const useOfficeData = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const responseData = await res.json();
+        // ✅ FIX: Handle empty response
+        let responseData: any = {};
+        const text = await res.text();
+        if (text) {
+          try {
+            responseData = JSON.parse(text);
+          } catch (e) {
+            console.warn(`[WARN] DELETE response not JSON: ${text.substring(0, 100)}`);
+          }
+        }
+
         console.log(`[DEBUG] DELETE /reimbursements/${id} response:`, res.status, responseData);
 
         if (!res.ok) {
@@ -354,7 +377,19 @@ const useOfficeData = () => {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) throw new Error("Failed to delete user");
+        // Handle empty response for DELETE
+        const text = await res.text();
+        if (!res.ok) {
+          if (text) {
+            try {
+              const data = JSON.parse(text);
+              throw new Error(data.message || "Failed to delete user");
+            } catch {
+              throw new Error(`HTTP ${res.status}`);
+            }
+          }
+          throw new Error(`HTTP ${res.status}`);
+        }
         return true;
       } catch (error: any) {
         console.error("Failed to delete user:", error);
@@ -397,7 +432,7 @@ function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated, logout, loading: authLoading, user } = useAuth(); // ← ← ← Ambil user untuk cek role
+  const { isAuthenticated, logout, loading: authLoading, user } = useAuth();
   const officeData = useOfficeData();
 
   // Loading state

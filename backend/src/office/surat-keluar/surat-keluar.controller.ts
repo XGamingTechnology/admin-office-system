@@ -83,12 +83,18 @@ export class SuratKeluarController {
 
   @Delete(":id")
   @Roles("admin")
-  remove(@Param("id") id: string, @Req() req?: Request) {
+  async remove(@Param("id") id: string, @Req() req?: Request) {
     const user = (req as any)?.user;
-    const role = this._extractRole(user);
-    console.log(`🔐 [RBAC DELETE] surat-keluar ${id}: role="${role}", userId="${user?.sub}"`);
+    console.log(`🔐 [RBAC DELETE] surat-keluar ${id} by ${user?.email}`);
 
-    return this.suratKeluarService.remove(id); // ← Pastikan ini suratKeluarService
+    await this.suratKeluarService.remove(id);
+
+    // ✅ RETURN JSON response
+    return {
+      success: true,
+      message: "Surat keluar deleted successfully",
+      id: id,
+    };
   }
 
   // ✅ Helper: Flexible role extraction with fallback
