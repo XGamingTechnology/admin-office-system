@@ -1,4 +1,4 @@
-// src/pages/Reimbursement.tsx - DEBUG VERSION
+// src/pages/Reimbursement.tsx
 import React, { useState, useEffect } from "react";
 import { Reimbursement as ReimbursementType } from "../types";
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
@@ -11,13 +11,11 @@ interface ReimbursementProps {
 }
 
 const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, onDelete }) => {
-  // 🐛 DEBUG: Log props received
+  // 🐛 DEBUG: Log props (bisa dihapus nanti)
   useEffect(() => {
-    console.log("🔍 [DEBUG Reimbursement] Props received:", {
-      dataCount: data?.length,
-      hasOnAdd: typeof onAdd === "function",
-      hasOnUpdate: typeof onUpdate === "function",
-      hasOnDelete: typeof onDelete === "function",
+    console.log("🔍 [DEBUG Reimbursement] Props:", {
+      count: data?.length,
+      hasHandlers: !!(onAdd && onUpdate && onDelete),
     });
   }, [data, onAdd, onUpdate, onDelete]);
 
@@ -43,18 +41,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
 
   const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // 🐛 DEBUG: Log filtered data
-  useEffect(() => {
-    console.log("🔍 [DEBUG Reimbursement] Filtered data:", {
-      total: data.length,
-      filtered: filteredData.length,
-      searchTerm,
-      firstItem: filteredData[0] || null,
-    });
-  }, [filteredData, searchTerm, data]);
-
   const openModal = (item?: ReimbursementType) => {
-    console.log("🔍 [DEBUG] openModal called with:", item?.id || "new item");
     if (item) {
       setEditingItem(item);
       setFormData({
@@ -80,20 +67,15 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   };
 
   const closeModal = () => {
-    console.log("🔍 [DEBUG] closeModal called");
     setIsModalOpen(false);
     setEditingItem(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🔍 [DEBUG] handleSubmit called", { editingItem: editingItem?.id, formData });
-
     if (editingItem) {
-      console.log("🔍 [DEBUG] Calling onUpdate");
       onUpdate({ ...editingItem, ...formData });
     } else {
-      console.log("🔍 [DEBUG] Calling onAdd");
       const { status, ...formDataWithoutStatus } = formData;
       const payload = { ...formDataWithoutStatus, file: formData.file || undefined };
       onAdd(payload);
@@ -102,22 +84,13 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   };
 
   const handleDelete = (id: string) => {
-    console.log("🔍 [DEBUG] handleDelete called with id:", id);
     if (confirm("Hapus reimbursement ini?")) {
-      console.log("🔍 [DEBUG] Confirmed, calling onDelete");
       onDelete(id);
-    } else {
-      console.log("🔍 [DEBUG] Cancelled delete");
     }
   };
 
   return (
     <div className="fade-in">
-      {/* 🐛 DEBUG: Render counter */}
-      <div className="text-xs text-gray-400 mb-2">
-        Debug: Data={data.length}, Filtered={filteredData.length}, Search="{searchTerm}"
-      </div>
-
       {/* Search + Add */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <input type="text" placeholder="Cari kategori/keterangan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border rounded-lg w-full md:w-1/3 focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -148,49 +121,37 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   </td>
                 </tr>
               ) : (
-                filteredData.map((r, index) => {
-                  // 🐛 DEBUG: Log each row render
-                  console.log(`🔍 [DEBUG] Rendering row ${index}:`, { id: r.id, nomor: r.keterangan });
-
-                  return (
-                    <tr key={r.id} className="hover:bg-gray-50 border-b last:border-0">
-                      <td className="p-3 text-sm">{r.tanggal}</td>
-                      <td className="p-3">
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{r.kategori}</span>
-                      </td>
-                      <td className="p-3 text-sm text-gray-700">{r.keterangan}</td>
-                      <td className="p-3 font-semibold text-emerald-700">{fmtRupiah(r.jumlah)}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(r.status)}`}>{r.status}</span>
-                      </td>
-                      <td className="p-3 text-center">
-                        {/* 🐛 DEBUG: Button with logs */}
-                        <button
-                          onClick={() => {
-                            console.log("🔍 [DEBUG] Edit button clicked for id:", r.id);
-                            openModal(r);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 mx-1 p-1"
-                          title="Edit"
-                          data-testid={`edit-btn-${r.id}`}
-                        >
-                          <i className="fa-solid fa-pen"></i>
-                        </button>
-                        <button
-                          onClick={() => {
-                            console.log("🔍 [DEBUG] Delete button clicked for id:", r.id);
-                            handleDelete(r.id);
-                          }}
-                          className="text-red-600 hover:text-red-800 mx-1 p-1"
-                          title="Hapus"
-                          data-testid={`delete-btn-${r.id}`}
-                        >
-                          <i className="fa-solid fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                filteredData.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50 border-b last:border-0">
+                    <td className="p-3 text-sm">{r.tanggal}</td>
+                    <td className="p-3">
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{r.kategori}</span>
+                    </td>
+                    <td className="p-3 text-sm text-gray-700">{r.keterangan}</td>
+                    <td className="p-3 font-semibold text-emerald-700">{fmtRupiah(r.jumlah)}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(r.status)}`}>{r.status}</span>
+                    </td>
+                    <td className="p-3 text-center whitespace-nowrap">
+                      {/* ✅ Edit Button - High Contrast */}
+                      <button
+                        onClick={() => openModal(r)}
+                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
+                        title="Edit"
+                      >
+                        <i className="fa-solid fa-pen text-sm"></i>
+                      </button>
+                      {/* ✅ Delete Button - High Contrast */}
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
+                        title="Hapus"
+                      >
+                        <i className="fa-solid fa-trash text-sm"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -265,7 +226,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 />
                 {formData.file && (
                   <p className="text-xs text-green-600 mt-1">
-                    ✅ File: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB) // ← ✅ Fixed: 1024
+                    ✅ File: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
                   </p>
                 )}
               </div>

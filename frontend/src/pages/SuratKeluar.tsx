@@ -65,7 +65,6 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (editingSurat) {
       onUpdate({ ...editingSurat, ...formData });
     } else {
@@ -117,19 +116,25 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(s.status)}`}>{s.status}</span>
                     </td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => openModal(s)} className="text-blue-600 hover:text-blue-800 mx-1 p-1" title="Edit">
-                        <i className="fa-solid fa-pen"></i>
+                    <td className="p-3 text-center whitespace-nowrap">
+                      {/* ✅ Edit Button - High Contrast */}
+                      <button
+                        onClick={() => openModal(s)}
+                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
+                        title="Edit"
+                      >
+                        <i className="fa-solid fa-pen text-sm"></i>
                       </button>
+                      {/* ✅ Delete Button - High Contrast */}
                       <button
                         onClick={() => onDelete(s.id)}
-                        className="text-red-600 hover:text-red-800 mx-1 p-1"
+                        className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 p-2 rounded-lg transition mx-1 cursor-pointer shadow-sm inline-flex items-center justify-center"
                         title="Hapus"
                         onClickCapture={(e) => {
                           if (!confirm("Hapus surat ini?")) e.preventDefault();
                         }}
                       >
-                        <i className="fa-solid fa-trash"></i>
+                        <i className="fa-solid fa-trash text-sm"></i>
                       </button>
                     </td>
                   </tr>
