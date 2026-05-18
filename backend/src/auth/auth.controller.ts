@@ -9,20 +9,20 @@ import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post("register")
-  @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
+  // @Post("register")
+  // @HttpCode(HttpStatus.CREATED)
+  // async register(@Body() registerDto: RegisterDto) {
+  //   return this.authService.register(registerDto);
+  // }
 
   @Post("login")
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get("profile")
-  async getProfile(@Request() req) {
-    return this.authService.getProfile(req.user.userId);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Get("profile")
+  // async getProfile(@Request() req) {
+  //   return this.authService.getProfile(req.user.userId);
+  // }
 }
