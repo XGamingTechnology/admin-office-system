@@ -16,9 +16,7 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  // ✅ VALIDATE USER: Untuk login
   async validateUser(email: string, password: string): Promise<any> {
-    // Note: password has select: false, so we add it explicitly
     const user = await this.userRepository.findOne({
       where: { email },
       select: ["id", "email", "name", "role", "password", "isActive", "createdAt", "updatedAt"],
@@ -34,22 +32,32 @@ export class AuthService {
     return null;
   }
 
-  // ✅ LOGIN: Generate JWT token
+  // ✅ FIX: Pastikan login() menyertakan 'role' di payload JWT
   async login(user: any) {
-    // ✅ PASTIKAN field 'role' disertakan di payload JWT untuk RBAC
+    // 🐛 DEBUG: Log user object sebelum generate token
+    console.log("🔐 [AuthService] Login user object:", {
+      id: user.id,
+      email: user.email,
+      role: user.role, // ← ← ← Pastikan ini ada!
+      name: user.name,
+    });
+
+    // ✅ WAJIB: Sertakan 'role' di payload JWT untuk RBAC
     const payload = {
       email: user.email,
       sub: user.id,
-      role: user.role, // ← ← ← WAJIB ADA untuk RolesGuard
+      role: user.role, // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
       name: user.name,
     };
+
+    console.log("🔐 [AuthService] JWT payload:", payload); // Debug log
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
-        role: user.role, // ← ← ← Juga kirim di response frontend
+        role: user.role, // ← ← ← Juga kirim di response untuk frontend
         name: user.name,
         isActive: user.isActive,
       },
