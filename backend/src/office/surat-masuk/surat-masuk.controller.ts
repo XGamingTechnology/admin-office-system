@@ -12,7 +12,7 @@ import { RolesGuard } from "../../auth/guards/roles.guard";
 import { Roles } from "../../auth/decorators/roles.decorator";
 
 @Controller("office/surat-masuk")
-@UseGuards(JwtAuthGuard, RolesGuard) // ← ← ← Protect all endpoints
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class SuratMasukController {
   constructor(
     private readonly suratMasukService: SuratMasukService,
@@ -20,35 +20,36 @@ export class SuratMasukController {
   ) {}
 
   @Post()
-  @Roles("admin", "user") // ← Both can create
+  @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
   @UsePipes(new FormDataPipe())
-  async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File, @Req() req: Request) {
+  async create(
+    @Body() createSuratMasukDto: CreateSuratMasukDto,
+    @UploadedFile() file?: Express.Multer.File,
+    @Req() req?: Request // ✅ FIX: Made optional (setelah parameter optional file)
+  ) {
     let fileUrl: string | undefined;
 
-    // Upload file if provided
     if (file) {
       fileUrl = await this.cloudinaryService.uploadFile(file);
     }
 
-    const userId = (req as any).user?.sub;
+    const userId = (req as any)?.user?.sub;
 
-    // Create with default status (PENDING) - frontend cannot set status on CREATE
     return this.suratMasukService.create({
       ...createSuratMasukDto,
       fileUrl,
-      createdBy: userId, // Track who created this
-      // status is auto-set to PENDING by entity default
+      createdBy: userId,
     });
   }
 
   @Get()
   @Roles("admin", "user")
-  findAll(@Req() req: Request) {
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+  findAll(@Req() req?: Request) {
+    // ✅ FIX: Made optional
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // If not admin, only return user's own data
     if (role !== "admin") {
       return this.suratMasukService.findAllByUser(userId);
     }
@@ -56,19 +57,19 @@ export class SuratMasukController {
   }
 
   @Get("statistics")
-  @Roles("admin") // ← Only admin can view statistics
+  @Roles("admin")
   getStatistics() {
     return this.suratMasukService.getStatistics();
   }
 
   @Get(":id")
   @Roles("admin", "user")
-  async findOne(@Param("id") id: string, @Req() req: Request) {
+  async findOne(@Param("id") id: string, @Req() req?: Request) {
+    // ✅ FIX: Made optional
     const item = await this.suratMasukService.findOne(id);
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // If not admin, check ownership
     if (role !== "admin" && item.createdBy !== userId) {
       throw new ForbiddenException("You can only view your own incoming letters");
     }
@@ -78,25 +79,26 @@ export class SuratMasukController {
   @Patch(":id")
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
-  async update(@Param("id") id: string, @Body() updateSuratMasukDto: UpdateSuratMasukDto, @UploadedFile() file?: Express.Multer.File, @Req() req: Request) {
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+  async update(
+    @Param("id") id: string,
+    @Body() updateSuratMasukDto: UpdateSuratMasukDto,
+    @UploadedFile() file?: Express.Multer.File,
+    @Req() req?: Request // ✅ FIX: Made optional (setelah parameter optional file)
+  ) {
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // Fetch current item to check ownership
     const currentItem = await this.suratMasukService.findOne(id);
 
-    // If not admin, check ownership
     if (role !== "admin" && currentItem.createdBy !== userId) {
       throw new ForbiddenException("You can only edit your own incoming letters");
     }
 
-    // Handle file upload for update
     if (file) {
       const fileUrl = await this.cloudinaryService.uploadFile(file);
       updateSuratMasukDto.fileUrl = fileUrl;
     }
 
-    // If not admin, prevent changing status
     if (role !== "admin" && updateSuratMasukDto.status) {
       throw new ForbiddenException("Only admin can change letter status");
     }
@@ -105,7 +107,7 @@ export class SuratMasukController {
   }
 
   @Delete(":id")
-  @Roles("admin") // ← Only admin can delete
+  @Roles("admin")
   remove(@Param("id") id: string) {
     return this.suratMasukService.remove(id);
   }

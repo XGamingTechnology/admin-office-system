@@ -10,31 +10,32 @@ import { RolesGuard } from "../../auth/guards/roles.guard";
 import { Roles } from "../../auth/decorators/roles.decorator";
 
 @Controller("office/surat-keluar")
-@UseGuards(JwtAuthGuard, RolesGuard) // ← ← ← Protect all endpoints
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class SuratKeluarController {
   constructor(private readonly suratKeluarService: SuratKeluarService) {}
 
   @Post()
-  @Roles("admin", "user") // ← Both can create
+  @Roles("admin", "user")
   @UsePipes(new FormDataPipe())
-  async create(@Body() createSuratKeluarDto: CreateSuratKeluarDto, @Req() req: Request) {
-    const userId = (req as any).user?.sub;
+  async create(
+    @Body() createSuratKeluarDto: CreateSuratKeluarDto,
+    @Req() req?: Request // ✅ FIX: Made optional
+  ) {
+    const userId = (req as any)?.user?.sub;
 
-    // Create with default status (PENDING) - frontend cannot set status on CREATE
     return this.suratKeluarService.create({
       ...createSuratKeluarDto,
-      createdBy: userId, // Track who created this
-      // status is auto-set to PENDING by entity default
+      createdBy: userId,
     });
   }
 
   @Get()
   @Roles("admin", "user")
-  findAll(@Req() req: Request) {
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+  findAll(@Req() req?: Request) {
+    // ✅ FIX: Made optional
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // If not admin, only return user's own data
     if (role !== "admin") {
       return this.suratKeluarService.findAllByUser(userId);
     }
@@ -42,19 +43,19 @@ export class SuratKeluarController {
   }
 
   @Get("statistics")
-  @Roles("admin") // ← Only admin can view statistics
+  @Roles("admin")
   getStatistics() {
     return this.suratKeluarService.getStatistics();
   }
 
   @Get(":id")
   @Roles("admin", "user")
-  async findOne(@Param("id") id: string, @Req() req: Request) {
+  async findOne(@Param("id") id: string, @Req() req?: Request) {
+    // ✅ FIX: Made optional
     const item = await this.suratKeluarService.findOne(id);
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // If not admin, check ownership
     if (role !== "admin" && item.createdBy !== userId) {
       throw new ForbiddenException("You can only view your own outgoing letters");
     }
@@ -63,19 +64,20 @@ export class SuratKeluarController {
 
   @Patch(":id")
   @Roles("admin", "user")
-  async update(@Param("id") id: string, @Body() updateSuratKeluarDto: UpdateSuratKeluarDto, @Req() req: Request) {
-    const userId = (req as any).user?.sub;
-    const role = (req as any).user?.role;
+  async update(
+    @Param("id") id: string,
+    @Body() updateSuratKeluarDto: UpdateSuratKeluarDto,
+    @Req() req?: Request // ✅ FIX: Made optional
+  ) {
+    const userId = (req as any)?.user?.sub;
+    const role = (req as any)?.user?.role;
 
-    // Fetch current item to check ownership
     const currentItem = await this.suratKeluarService.findOne(id);
 
-    // If not admin, check ownership
     if (role !== "admin" && currentItem.createdBy !== userId) {
       throw new ForbiddenException("You can only edit your own outgoing letters");
     }
 
-    // If not admin, prevent changing status
     if (role !== "admin" && updateSuratKeluarDto.status) {
       throw new ForbiddenException("Only admin can change letter status");
     }
@@ -84,7 +86,7 @@ export class SuratKeluarController {
   }
 
   @Delete(":id")
-  @Roles("admin") // ← Only admin can delete
+  @Roles("admin")
   remove(@Param("id") id: string) {
     return this.suratKeluarService.remove(id);
   }
