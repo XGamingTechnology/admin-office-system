@@ -4,7 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { AuthModule } from "./auth/auth.module";
-import { UsersModule } from "./users/users.module"; // ← ← ← TAMBAHKAN
+import { UsersModule } from "./users/users.module"; // ← ← ← TAMBAHKAN IMPORT INI
 import { ReimbursementModule } from "./office/reimbursement/reimbursement.module";
 import { SuratMasukModule } from "./office/surat-masuk/surat-masuk.module";
 import { SuratKeluarModule } from "./office/surat-keluar/surat-keluar.module";
@@ -27,7 +27,7 @@ import { SuratKeluarModule } from "./office/surat-keluar/surat-keluar.module";
       inject: [ConfigService],
     }),
     AuthModule,
-    UsersModule, // ← ← ← TAMBAHKAN
+    UsersModule, // ← ← ← TAMBAHKAN INI
     ReimbursementModule,
     SuratMasukModule,
     SuratKeluarModule,
