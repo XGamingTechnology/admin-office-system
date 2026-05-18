@@ -105,10 +105,14 @@ export class ReimbursementController {
 
   @Delete(":id")
   @Roles("admin")
-  remove(@Param("id") id: string) {
-    return this.reimbursementService.remove(id);
-  }
+  remove(@Param("id") id: string, @Req() req?: Request) {
+    // Optional: Debug log
+    const user = (req as any)?.user;
+    const role = this._extractRole(user);
+    console.log(`🔐 [RBAC DELETE] reimbursement ${id}: role="${role}", userId="${user?.sub}"`);
 
+    return this.reimbursementService.remove(id); // ← ✅ BENAR: reimbursementService
+  }
   // ✅ Helper: Flexible role extraction with fallback
   private _extractRole(user: any): string {
     if (!user) return "";

@@ -103,7 +103,8 @@ export class SuratMasukController {
     const user = (req as any)?.user;
     const role = this._extractRole(user);
     console.log(`🔐 [RBAC DELETE] surat-masuk ${id}: role="${role}", userId="${user?.sub}"`);
-    return this.suratMasukService.remove(id);
+
+    return this.suratMasukService.remove(id); // ← Pastikan ini suratMasukService
   }
 
   @Get("health")
