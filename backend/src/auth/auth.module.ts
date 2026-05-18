@@ -1,22 +1,32 @@
-// src/auth/auth.module.ts
+// backend/src/auth/auth.module.ts
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
+import { TypeOrmModule } from "@nestjs/typeorm"; // ← ← ← TAMBAHKAN IMPORT INI
+import { ConfigModule, ConfigService } from "@nestjs/config";
+
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-import { ConfigModule, ConfigService } from "@nestjs/config";
 
 // Import guards & decorators
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RolesGuard } from "./guards/roles.guard";
 
+// ✅ TAMBAHKAN: Import User entity (sesuaikan path dengan project kamu)
+// Coba salah satu path berikut (pilih yang file-nya benar-benar ada):
+import { User } from "../users/entities/user.entity"; // ← Path umum #1
+// import { User } from "../auth/entities/user.entity";  // ← Path umum #2
+// import { User } from "../entities/user.entity";       // ← Path umum #3
+
 @Module({
   imports: [
     PassportModule,
     ConfigModule,
-    // ❌ REMOVE: import { UsersModule } from "../users/users.module";
-    // ❌ REMOVE: UsersModule from imports array if it doesn't exist
+
+    // ✅ TAMBAHKAN: Register User entity agar UserRepository tersedia
+    TypeOrmModule.forFeature([User]), // ← ← ← INI YANG KURANG!
+
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
