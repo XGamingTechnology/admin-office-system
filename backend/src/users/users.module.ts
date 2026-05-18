@@ -4,7 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
-  exports: [TypeOrmModule], // Export agar AuthModule bisa pakai
+  imports: [TypeOrmModule.forFeature([User])], // Register UserRepository
+  exports: [TypeOrmModule], // ← ← ← WAJIB: Export agar AuthModule bisa akses UserRepository
 })
 export class UsersModule {}
