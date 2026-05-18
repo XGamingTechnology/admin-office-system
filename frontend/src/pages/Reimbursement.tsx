@@ -1,12 +1,11 @@
 // src/pages/Reimbursement.tsx
 import React, { useState } from "react";
-import { Reimbursement as ReimbursementType } from "../types"; // ← Frontend type
+import { Reimbursement as ReimbursementType } from "../types";
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
 
-// ✅ Interface props: onAdd accepts optional file, excludes status for CREATE
 interface ReimbursementProps {
   data: ReimbursementType[];
-  onAdd: (r: Omit<ReimbursementType, "id" | "status"> & { file?: File }) => void; // ← No status, optional file
+  onAdd: (r: Omit<ReimbursementType, "id" | "status"> & { file?: File }) => void;
   onUpdate: (r: ReimbursementType) => void;
   onDelete: (id: string) => void;
 }
@@ -16,16 +15,15 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReimbursementType | null>(null);
 
-  // ✅ formData: include optional file field
   const [formData, setFormData] = useState<{
     tanggal: string;
     kategori: ReimbursementType["kategori"];
     keterangan: string;
     jumlah: number;
     status: ReimbursementType["status"];
-    file?: File | null; // ← ← ← File state for upload
+    file?: File | null;
   }>({
-    tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
+    tanggal: new Date().toISOString().split("T")[0],
     kategori: "Transport",
     keterangan: "",
     jumlah: 0,
@@ -33,10 +31,8 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     file: null,
   });
 
-  // ✅ Filter: search by frontend field names
   const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ✅ openModal: reset file when opening modal
   const openModal = (item?: ReimbursementType) => {
     if (item) {
       setEditingItem(item);
@@ -46,7 +42,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         keterangan: item.keterangan || "",
         jumlah: item.jumlah || 0,
         status: item.status,
-        file: null, // Reset file on edit
+        file: null,
       });
     } else {
       setEditingItem(null);
@@ -67,28 +63,22 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     setEditingItem(null);
   };
 
-  // ✅ handleSubmit: exclude status for CREATE, include file if selected
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingItem) {
-      // UPDATE: send full object with status
       onUpdate({ ...editingItem, ...formData });
     } else {
-      // CREATE: exclude status (backend sets default: PENDING), include file if exists
       const { status, ...formDataWithoutStatus } = formData;
-      const payload = {
-        ...formDataWithoutStatus,
-        file: formData.file || undefined, // Remove if null
-      };
-      onAdd(payload); // ← Send payload without status, with optional file
+      const payload = { ...formDataWithoutStatus, file: formData.file || undefined };
+      onAdd(payload);
     }
     closeModal();
   };
 
   return (
     <div className="fade-in">
-      {/* Search + Add Button */}
+      {/* Search + Add */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <input type="text" placeholder="Cari kategori/keterangan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border rounded-lg w-full md:w-1/3 focus:ring-2 focus:ring-blue-500 outline-none" />
         <button onClick={() => openModal()} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2">
@@ -96,7 +86,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </button>
       </div>
 
-      {/* Table: Display frontend field names */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -152,7 +142,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
         </div>
       </div>
 
-      {/* Modal: Form with file upload */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -162,7 +152,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 &times;
               </button>
             </div>
-
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -173,12 +162,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
                   <select
                     value={formData.kategori}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        kategori: e.target.value as ReimbursementType["kategori"],
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, kategori: e.target.value as ReimbursementType["kategori"] })}
                     required
                     className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -190,7 +174,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
                 <input
@@ -202,7 +185,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   placeholder="Contoh: Transportasi meeting client"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp)</label>
                 <input
@@ -215,8 +197,6 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   placeholder="0"
                 />
               </div>
-
-              {/* ✅ NEW: File Upload Input for receipt/bukti */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bukti / Lampiran</label>
                 <input
@@ -224,40 +204,31 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   accept="image/*,.pdf"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      setFormData({ ...formData, file });
-                    }
+                    if (file) setFormData({ ...formData, file });
                   }}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {formData.file && (
                   <p className="text-xs text-green-600 mt-1">
-                    ✅ File terpilih: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
+                    ✅ File: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as ReimbursementType["status"],
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ReimbursementType["status"] })}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={!editingItem} // ← Disable for CREATE (backend sets default: PENDING)
+                  disabled={!editingItem}
                 >
                   <option value="Draft">Draft / Menunggu</option>
                   <option value="Disetujui">Disetujui</option>
                   <option value="Ditolak">Ditolak</option>
                   <option value="Dibayar">Sudah Dibayar</option>
                 </select>
-                {!editingItem && <p className="text-xs text-gray-500 mt-1">* Status akan diatur otomatis saat pengajuan</p>}
+                {!editingItem && <p className="text-xs text-gray-500 mt-1">* Status diatur otomatis saat pengajuan</p>}
               </div>
-
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                   Batal

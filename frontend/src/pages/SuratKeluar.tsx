@@ -1,12 +1,11 @@
 // src/pages/SuratKeluar.tsx
 import React, { useState } from "react";
-import { Surat } from "../types"; // ← Frontend type from types.ts
+import { Surat } from "../types";
 import { getStatusColor } from "../utils/helpers";
 
-// ✅ Interface props: onAdd accepts optional file, excludes status for CREATE
 interface SuratKeluarProps {
   data: Surat[];
-  onAdd: (s: Omit<Surat, "id" | "status"> & { file?: File }) => void; // ← No status, optional file
+  onAdd: (s: Omit<Surat, "id" | "status"> & { file?: File }) => void;
   onUpdate: (s: Surat) => void;
   onDelete: (id: string) => void;
 }
@@ -16,27 +15,24 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSurat, setEditingSurat] = useState<Surat | null>(null);
 
-  // ✅ formData: include optional file field
   const [formData, setFormData] = useState<{
     nomor: string;
     tanggal: string;
     perihal: string;
     pihak: string;
     status: Surat["status"];
-    file?: File | null; // ← ← ← File state for upload
+    file?: File | null;
   }>({
     nomor: "",
-    tanggal: new Date().toISOString().split("T")[0], // 'YYYY-MM-DD'
+    tanggal: new Date().toISOString().split("T")[0],
     perihal: "",
     pihak: "",
     status: "Draft",
     file: null,
   });
 
-  // ✅ Filter: search by frontend field names
   const filteredData = data.filter((s) => s.nomor?.toLowerCase().includes(searchTerm.toLowerCase()) || s.perihal?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ✅ openModal: reset file when opening modal
   const openModal = (surat?: Surat) => {
     if (surat) {
       setEditingSurat(surat);
@@ -46,7 +42,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         perihal: surat.perihal || "",
         pihak: surat.pihak || "",
         status: surat.status,
-        file: null, // Reset file on edit
+        file: null,
       });
     } else {
       setEditingSurat(null);
@@ -67,28 +63,22 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
     setEditingSurat(null);
   };
 
-  // ✅ handleSubmit: exclude status for CREATE, include file if selected
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingSurat) {
-      // UPDATE: send full object with status
       onUpdate({ ...editingSurat, ...formData });
     } else {
-      // CREATE: exclude status (backend sets default), include file if exists
       const { status, ...formDataWithoutStatus } = formData;
-      const payload = {
-        ...formDataWithoutStatus,
-        file: formData.file || undefined, // Remove if null
-      };
-      onAdd(payload); // ← Send payload without status, with optional file
+      const payload = { ...formDataWithoutStatus, file: formData.file || undefined };
+      onAdd(payload);
     }
     closeModal();
   };
 
   return (
     <div className="fade-in">
-      {/* Search + Add Button */}
+      {/* Search + Add */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <input type="text" placeholder="Cari nomor/perihal..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border rounded-lg w-full md:w-1/3 focus:ring-2 focus:ring-blue-500 outline-none" />
         <button onClick={() => openModal()} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2">
@@ -96,7 +86,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         </button>
       </div>
 
-      {/* Table: Display frontend field names */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -150,7 +140,7 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
         </div>
       </div>
 
-      {/* Modal: Form with file upload */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
@@ -160,7 +150,6 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                 &times;
               </button>
             </div>
-
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -179,7 +168,6 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                   <input type="date" value={formData.tanggal} onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })} required className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Perihal</label>
                 <input
@@ -191,7 +179,6 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                   placeholder="Contoh: Undangan rapat koordinasi"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tujuan</label>
                 <input
@@ -203,8 +190,6 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                   placeholder="Nama instansi/penerima"
                 />
               </div>
-
-              {/* ✅ NEW: File Upload Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Lampiran / Foto</label>
                 <input
@@ -212,39 +197,30 @@ const SuratKeluar: React.FC<SuratKeluarProps> = ({ data, onAdd, onUpdate, onDele
                   accept="image/*,.pdf"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      setFormData({ ...formData, file });
-                    }
+                    if (file) setFormData({ ...formData, file });
                   }}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {formData.file && (
                   <p className="text-xs text-green-600 mt-1">
-                    ✅ File terpilih: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
+                    ✅ File: {formData.file.name} ({Math.round(formData.file.size / 1024)} KB)
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as Surat["status"],
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as Surat["status"] })}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={!editingSurat} // ← Disable for CREATE (backend sets default)
+                  disabled={!editingSurat}
                 >
                   <option value="Draft">Draft</option>
                   <option value="Dalam Proses">Dalam Proses</option>
                   <option value="Selesai">Selesai / Terkirim</option>
                 </select>
-                {!editingSurat && <p className="text-xs text-gray-500 mt-1">* Status akan diatur otomatis saat pembuatan</p>}
+                {!editingSurat && <p className="text-xs text-gray-500 mt-1">* Status diatur otomatis saat pembuatan</p>}
               </div>
-
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                   Batal
