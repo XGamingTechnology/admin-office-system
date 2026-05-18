@@ -34,15 +34,43 @@ export interface DashboardData {
   logs: string[];
 }
 
-// ✅ User (dari auth)
+// Tambahkan di frontend/src/types.ts
+
+// frontend/src/types.ts - TAMBAHKAN DI BAGIAN BAWAH FILE
+
+// ✅ User type untuk Admin Control (dengan role)
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
-  createdAt?: string;
+  role: "admin" | "user"; // ← ← ← WAJIB ADA
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// ✅ Payload types untuk Admin Control forms
+export interface CreateUserPayload {
+  email: string;
+  name?: string;
+  password: string;
+  role?: "admin" | "user";
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  role?: "admin" | "user";
+  isActive?: boolean;
+}
+
+// ✅ Update Auth User type (jika belum ada role)
+// Cari interface User di AuthContext dan tambahkan role:
+// export interface User {
+//   id: string;
+//   email: string;
+//   name?: string;
+//   role?: 'admin' | 'user';  // ← ← ← TAMBAHKAN INI
+// }
 // ✅ Type alias untuk kompatibilitas legacy
 export type AppState = DashboardData;
 
@@ -129,7 +157,7 @@ export const mapSuratMasukBackendToFrontend = (backend: any): Surat => ({
   tanggal: backend.tanggalSurat,
   perihal: backend.perihal,
   pihak: backend.asalSurat,
-  status: mapSuratStatusToFrontend(backend.status),  // Transform status for display
+  status: mapSuratStatusToFrontend(backend.status), // Transform status for display
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
@@ -149,9 +177,8 @@ export const mapSuratMasukFrontendToBackendForUpdate = (frontend: Surat) => ({
   asalSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
-  status: mapSuratStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapSuratStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });
-
 
 // ==================== SURAT KELUAR: Backend ↔ Frontend ====================
 
@@ -185,9 +212,8 @@ export const mapSuratKeluarFrontendToBackendForUpdate = (frontend: Surat) => ({
   tujuanSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
-  status: mapSuratStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapSuratStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });
-
 
 // ==================== REIMBURSEMENT: Backend ↔ Frontend ====================
 
@@ -220,5 +246,5 @@ export const mapReimbursementFrontendToBackendForUpdate = (frontend: Reimburseme
   description: frontend.keterangan,
   amount: frontend.jumlah,
   expenseDate: frontend.tanggal,
-  status: mapReimbursementStatusToBackend(frontend.status),  // ✓ Include status for UPDATE
+  status: mapReimbursementStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });

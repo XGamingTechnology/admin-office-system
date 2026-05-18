@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+// frontend/src/context/AuthContext.tsx - Update User type
 export interface User {
   id: string;
   email: string;
-  name: string;
+  name?: string;
+  role?: "admin" | "user"; // ← ← ← TAMBAHKAN INI
 }
 
 export interface AuthContextType {

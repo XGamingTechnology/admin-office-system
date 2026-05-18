@@ -9,10 +9,12 @@ import Dashboard from "./pages/Dashboard";
 import SuratMasuk from "./pages/SuratMasuk";
 import SuratKeluar from "./pages/SuratKeluar";
 import Reimbursement from "./pages/Reimbursement";
+import AdminControl from "./pages/AdminControl"; // ← ← ← TAMBAHKAN IMPORT INI
 import Login from "./pages/Login";
 import {
   Surat,
   Reimbursement as ReimbursementType,
+  User, // ← ← ← TAMBAHKAN IMPORT TYPE USER
   // Mapping functions for API boundary transformation
   mapSuratMasukBackendToFrontend,
   mapSuratMasukFrontendToBackend,
@@ -65,7 +67,7 @@ const useOfficeData = () => {
         setData((prev) => ({ ...prev, reimburse: frontendData }));
       }
     } catch (error) {
-      console.error("Failed to fetch office ", error);
+      console.error("Failed to fetch office data:", error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,6 @@ const useOfficeData = () => {
 
   // ==================== SURAT CRUD (with transformation) ====================
 
-  // ✅ CREATE Surat
   const addSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Omit<Surat, "id">) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -85,7 +86,6 @@ const useOfficeData = () => {
       const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
 
       try {
-        // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
         console.log(`[DEBUG] POST /${endpoint} payload:`, backendPayload);
 
@@ -104,7 +104,6 @@ const useOfficeData = () => {
           return false;
         }
 
-        // Transform backend → frontend before updating state
         const frontendData = mapToFrontend(responseData);
         setData((prev) => ({ ...prev, [type]: [...prev[type], frontendData] }));
         return true;
@@ -117,7 +116,6 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ UPDATE Surat
   const updateSurat = useCallback(
     async (type: "masuk" | "keluar", surat: Surat) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -125,7 +123,6 @@ const useOfficeData = () => {
       const mapToFrontend = type === "masuk" ? mapSuratMasukBackendToFrontend : mapSuratKeluarBackendToFrontend;
 
       try {
-        // Transform frontend → backend
         const backendPayload = mapToBackend(surat);
         console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} payload:`, backendPayload);
 
@@ -144,7 +141,6 @@ const useOfficeData = () => {
           return false;
         }
 
-        // Transform backend → frontend
         const frontendData = mapToFrontend(responseData);
         setData((prev) => ({
           ...prev,
@@ -160,7 +156,6 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ DELETE Surat (no transformation needed)
   const deleteSurat = useCallback(
     async (type: "masuk" | "keluar", id: string) => {
       const endpoint = type === "masuk" ? "surat-masuk" : "surat-keluar";
@@ -192,13 +187,11 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ==================== REIMBURSEMENT CRUD (with transformation) ====================
+  // ==================== REIMBURSEMENT CRUD ====================
 
-  // ✅ CREATE Reimbursement
   const addReimbursement = useCallback(
     async (r: Omit<ReimbursementType, "id">) => {
       try {
-        // Transform frontend → backend
         const backendPayload = mapReimbursementFrontendToBackend(r);
         console.log(`[DEBUG] POST /reimbursements payload:`, backendPayload);
 
@@ -217,7 +210,6 @@ const useOfficeData = () => {
           return false;
         }
 
-        // Transform backend → frontend
         const frontendData = mapReimbursementBackendToFrontend(responseData);
         setData((prev) => ({ ...prev, reimburse: [...prev.reimburse, frontendData] }));
         return true;
@@ -230,11 +222,9 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ UPDATE Reimbursement
   const updateReimbursement = useCallback(
     async (r: ReimbursementType) => {
       try {
-        // Transform frontend → backend
         const backendPayload = mapReimbursementFrontendToBackendForUpdate(r);
         console.log(`[DEBUG] PATCH /reimbursements/${r.id} payload:`, backendPayload);
 
@@ -253,7 +243,6 @@ const useOfficeData = () => {
           return false;
         }
 
-        // Transform backend → frontend
         const frontendData = mapReimbursementBackendToFrontend(responseData);
         setData((prev) => ({
           ...prev,
@@ -269,7 +258,6 @@ const useOfficeData = () => {
     [token]
   );
 
-  // ✅ DELETE Reimbursement (no transformation needed)
   const deleteReimbursement = useCallback(
     async (id: string) => {
       try {
@@ -300,6 +288,83 @@ const useOfficeData = () => {
     [token]
   );
 
+  // ==================== ADMIN: USER MANAGEMENT ====================
+
+  const fetchUsers = useCallback(async (): Promise<User[]> => {
+    if (!token) return [];
+    try {
+      const res = await fetch(`${API_URL}/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return await res.json();
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      return [];
+    }
+  }, [token]);
+
+  const createUser = useCallback(
+    async (payload: { email: string; name?: string; password: string; role?: string }) => {
+      if (!token) return false;
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to create user");
+        return true;
+      } catch (error: any) {
+        console.error("Failed to create user:", error);
+        alert(`Error: ${error.message}`);
+        return false;
+      }
+    },
+    [token]
+  );
+
+  const updateUser = useCallback(
+    async (id: string, payload: { name?: string; role?: string; isActive?: boolean }) => {
+      if (!token) return false;
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to update user");
+        return true;
+      } catch (error: any) {
+        console.error("Failed to update user:", error);
+        alert(`Error: ${error.message}`);
+        return false;
+      }
+    },
+    [token]
+  );
+
+  const deleteUser = useCallback(
+    async (id: string) => {
+      if (!token) return false;
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to delete user");
+        return true;
+      } catch (error: any) {
+        console.error("Failed to delete user:", error);
+        alert(`Error: ${error.message}`);
+        return false;
+      }
+    },
+    [token]
+  );
+
   return {
     data,
     loading,
@@ -310,6 +375,11 @@ const useOfficeData = () => {
     updateReimbursement,
     deleteReimbursement,
     refresh: fetchData,
+    // Admin functions
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
   };
 };
 
@@ -327,7 +397,7 @@ function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated, logout, loading: authLoading } = useAuth();
+  const { isAuthenticated, logout, loading: authLoading, user } = useAuth(); // ← ← ← Ambil user untuk cek role
   const officeData = useOfficeData();
 
   // Loading state
@@ -347,7 +417,7 @@ function AppContent() {
     return <Login />;
   }
 
-  // ✅ Authenticated → render LANGSUNG tanpa <Router> wrapper
+  // ✅ Authenticated → render LANGSUNG
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Layout />
@@ -359,7 +429,7 @@ function AppContent() {
               <i className="fa-solid fa-rotate-right"></i>
             </button>
             <span className="text-sm text-gray-500">
-              Welcome, <span className="font-semibold text-blue-600">Admin</span>
+              Welcome, <span className="font-semibold text-blue-600">{user?.name || user?.email || "Admin"}</span>
             </span>
             <button onClick={logout} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition">
               Logout
@@ -407,6 +477,25 @@ function AppContent() {
                   onAdd={(r: Omit<ReimbursementType, "id">) => officeData.addReimbursement(r)}
                   onUpdate={(r: ReimbursementType) => officeData.updateReimbursement(r)}
                   onDelete={(id: string) => officeData.deleteReimbursement(id)}
+                />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ NEW: Admin Control Panel Route - Admin Only */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminControl
+                  token={localStorage.getItem("office_token") || ""}
+                  API_URL={API_URL}
+                  onBack={() => (window.location.href = "/")}
+                  // Pass admin functions
+                  fetchUsers={officeData.fetchUsers}
+                  createUser={officeData.createUser}
+                  updateUser={officeData.updateUser}
+                  deleteUser={officeData.deleteUser}
                 />
               </ProtectedRoute>
             }
