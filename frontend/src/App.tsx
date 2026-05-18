@@ -136,6 +136,16 @@ const useOfficeData = () => {
         console.log(`[DEBUG] PATCH /${endpoint}/${surat.id} response:`, res.status, responseData);
 
         if (!res.ok) {
+          // ✅ Handle 404 - Data not found, remove from local state
+          if (res.status === 404) {
+            alert(`Data surat tidak ditemukan di server. Kemungkinan sudah dihapus. Data akan di-refresh.`);
+            setData((prev) => ({
+              ...prev,
+              [type]: prev[type].filter((s) => s.id !== surat.id),
+            }));
+            return false;
+          }
+          
           const errorMsg = responseData?.message ? (Array.isArray(responseData.message) ? responseData.message.join(", ") : responseData.message) : `HTTP ${res.status}`;
           alert(`Gagal update: ${errorMsg}`);
           return false;
