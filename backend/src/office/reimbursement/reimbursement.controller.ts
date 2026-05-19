@@ -1,4 +1,4 @@
-// src/office/reimbursement/reimbursement.controller.ts
+// backend/src/office/reimbursement/reimbursement.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UsePipes, Req, UseGuards, ForbiddenException } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request } from "express";
@@ -103,22 +103,35 @@ export class ReimbursementController {
     return this.reimbursementService.approve(id, approveDto, approvedBy);
   }
 
+  // ✅ FIX: DELETE dengan RBAC ownership check
   @Delete(":id")
-  @Roles("admin")
+  @Roles("admin", "user") // ← ← ← Izinkan admin DAN user
   async remove(@Param("id") id: string, @Req() req?: Request) {
-    // Optional: Debug log
     const user = (req as any)?.user;
-    console.log(`🔐 [RBAC DELETE] reimbursement ${id} by ${user?.email}`);
+    const userId = user?.sub;
+    const role = this._extractRole(user);
+
+    console.log(`🔐 [RBAC DELETE] reimbursement ${id}: role="${role}", userId="${userId}"`);
+
+    // ✅ FIX: Jika bukan admin, cek ownership
+    if (role !== "admin") {
+      const item = await this.reimbursementService.findOne(id);
+      if (item.createdBy !== userId) {
+        console.log(`🔐 [RBAC DELETE] Forbidden: user ${userId} tried to delete item owned by ${item.createdBy}`);
+        throw new ForbiddenException("You can only delete your own reimbursements");
+      }
+    }
 
     await this.reimbursementService.remove(id);
 
-    // ✅ RETURN JSON response (bukan void)
+    // ✅ RETURN JSON response
     return {
       success: true,
       message: "Reimbursement deleted successfully",
       id: id,
     };
   }
+
   // ✅ Helper: Flexible role extraction with fallback
   private _extractRole(user: any): string {
     if (!user) return "";

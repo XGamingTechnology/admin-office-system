@@ -1,4 +1,4 @@
-// src/office/surat-keluar/surat-keluar.controller.ts
+// backend/src/office/surat-keluar/surat-keluar.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Req, UseGuards, ForbiddenException } from "@nestjs/common";
 import { Request } from "express";
 
@@ -81,11 +81,24 @@ export class SuratKeluarController {
     return this.suratKeluarService.update(id, updateSuratKeluarDto);
   }
 
+  // ✅ FIX: DELETE dengan RBAC ownership check
   @Delete(":id")
-  @Roles("admin")
+  @Roles("admin", "user") // ← ← ← Izinkan admin DAN user
   async remove(@Param("id") id: string, @Req() req?: Request) {
     const user = (req as any)?.user;
-    console.log(`🔐 [RBAC DELETE] surat-keluar ${id} by ${user?.email}`);
+    const userId = user?.sub;
+    const role = this._extractRole(user);
+
+    console.log(`🔐 [RBAC DELETE] surat-keluar ${id}: role="${role}", userId="${userId}"`);
+
+    // ✅ FIX: Jika bukan admin, cek ownership
+    if (role !== "admin") {
+      const item = await this.suratKeluarService.findOne(id);
+      if (item.createdBy !== userId) {
+        console.log(`🔐 [RBAC DELETE] Forbidden: user ${userId} tried to delete item owned by ${item.createdBy}`);
+        throw new ForbiddenException("You can only delete your own outgoing letters");
+      }
+    }
 
     await this.suratKeluarService.remove(id);
 
