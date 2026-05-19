@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, Matches, IsEnum } from "class-validator"; // ← Change import
+// backend/src/office/surat-keluar/dto/surat-keluar.dto.ts
+import { IsNotEmpty, IsString, IsOptional, Matches, IsEnum } from "class-validator";
 import { SuratStatus } from "../entities/surat-keluar.entity";
 
 export class CreateSuratKeluarDto {
@@ -16,14 +17,12 @@ export class CreateSuratKeluarDto {
 
   @IsNotEmpty()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    // ← ← ← FIX: Accept YYYY-MM-DD
     message: "tanggalSurat must be in YYYY-MM-DD format",
   })
   tanggalSurat: string;
 
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    // ← ← ← FIX: Accept YYYY-MM-DD
     message: "tanggalKirim must be in YYYY-MM-DD format",
   })
   tanggalKirim?: string;
@@ -34,7 +33,12 @@ export class CreateSuratKeluarDto {
 
   @IsOptional()
   @IsString()
-  fileUrl?: string; // ← Good: Optional for manual URL assignment
+  fileUrl?: string;
+
+  // ✅ TAMBAHKAN: createdBy optional (diisi oleh controller dari JWT)
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 export class UpdateSuratKeluarDto {
@@ -52,7 +56,6 @@ export class UpdateSuratKeluarDto {
 
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    // ← ← ← FIX
     message: "tanggalSurat must be in YYYY-MM-DD format",
   })
   tanggalSurat?: string;
@@ -63,7 +66,6 @@ export class UpdateSuratKeluarDto {
 
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    // ← ← ← FIX
     message: "tanggalKirim must be in YYYY-MM-DD format",
   })
   tanggalKirim?: string;
