@@ -1,5 +1,5 @@
 // backend/src/users/users.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, ForbiddenException } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from "@nestjs/common";
 import { Request } from "express";
 import { UsersService } from "./users.service";
 import { CreateUserDto, UpdateUserDto } from "./dto/user.dto";
@@ -14,7 +14,7 @@ export class UsersController {
 
   @Get()
   @Roles("admin")
-  async findAll(@Req() req: Request) {
+  async findAll() {
     return this.usersService.findAll();
   }
 
@@ -28,6 +28,7 @@ export class UsersController {
   @Roles("admin")
   async create(@Body() createUserDto: CreateUserDto, @Req() req: Request) {
     const userId = (req as any).user?.sub;
+    // ✅ Kirim 2 args: dto + optional userId
     return this.usersService.create(createUserDto, userId);
   }
 
@@ -35,19 +36,21 @@ export class UsersController {
   @Roles("admin")
   async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
     const user = (req as any).user;
+    // ✅ Kirim 4 args: id, dto, + 2 optional params
     return this.usersService.update(id, updateUserDto, user?.sub, user?.role);
   }
 
   @Delete(":id")
   @Roles("admin")
   async remove(@Param("id") id: string) {
-    return this.usersService.remove(id); // Soft delete
+    await this.usersService.remove(id);
+    return { success: true, message: "User deactivated" };
   }
 
-  // Optional: Hard delete endpoint (use with caution)
   @Post(":id/hard-delete")
   @Roles("admin")
   async hardDelete(@Param("id") id: string) {
-    return this.usersService.hardDelete(id);
+    await this.usersService.hardDelete(id);
+    return { success: true, message: "User permanently deleted" };
   }
 }

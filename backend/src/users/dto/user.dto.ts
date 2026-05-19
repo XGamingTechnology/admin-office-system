@@ -32,7 +32,7 @@ export class UpdateUserDto {
   @IsOptional()
   isActive?: boolean;
 
-  // ✅ TAMBAHKAN: password optional untuk update password
+  // ✅ TAMBAHKAN: password optional untuk update
   @IsString()
   @IsOptional()
   password?: string;

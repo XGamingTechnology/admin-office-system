@@ -50,7 +50,6 @@ export class UsersService {
   }
 
   // ✅ FIX: requestedBy & requesterRole optional (?)
-  // ✅ FIX: Gunakan updateUserDto.password langsung (karena sudah ditambahkan di DTO)
   async update(id: string, updateUserDto: UpdateUserDto, requestedBy?: string, requesterRole?: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
@@ -60,7 +59,7 @@ export class UsersService {
       throw new ForbiddenException("You cannot change your own role");
     }
 
-    // Hash password if provided (type-safe now!)
+    // Hash password if provided (type-safe!)
     if (updateUserDto.password) {
       user.password = await bcrypt.hash(updateUserDto.password, 10);
     }
