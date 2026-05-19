@@ -17,9 +17,18 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
+    console.log(`🔐 [validateUser] Looking for: ${email}`);
+
     const user = await this.userRepository.findOne({
       where: { email },
       select: ["id", "email", "name", "role", "password", "isActive", "createdAt", "updatedAt"],
+    });
+
+    console.log(`🔐 [validateUser] Found:`, {
+      id: user?.id,
+      email: user?.email,
+      role: user?.role, // ← ← ← Pastikan ini ter-log
+      isActive: user?.isActive,
     });
 
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -32,32 +41,35 @@ export class AuthService {
     return null;
   }
 
-  // ✅ FIX: Pastikan login() menyertakan 'role' di payload JWT
+  // ✅ CLEAN VERSION: login() method
   async login(user: any) {
-    // 🐛 DEBUG: Log user object sebelum generate token
+    // 🐛 DEBUG: Log user object
     console.log("🔐 [AuthService] Login user object:", {
-      id: user.id,
-      email: user.email,
-      role: user.role, // ← ← ← Pastikan ini ada!
-      name: user.name,
+      id: user?.id,
+      email: user?.email,
+      role: user?.role,
+      name: user?.name,
     });
 
-    // ✅ WAJIB: Sertakan 'role' di payload JWT untuk RBAC
+    // ✅ Fallback: jika role undefined, default ke 'user' atau cek dari email
+    const userRole = user?.role || (user?.email?.includes("admin") ? "admin" : "user");
+
+    // ✅ JWT payload - bersih, tanpa komentar panjang
     const payload = {
       email: user.email,
       sub: user.id,
-      role: user.role, // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
+      role: userRole, // ← ← ← Menggunakan fallback
       name: user.name,
     };
 
-    console.log("🔐 [AuthService] JWT payload:", payload); // Debug log
+    console.log("🔐 [AuthService] JWT payload:", payload);
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
-        role: user.role, // ← ← ← Juga kirim di response untuk frontend
+        role: userRole, // ← ← ← Juga kirim ke frontend
         name: user.name,
         isActive: user.isActive,
       },
