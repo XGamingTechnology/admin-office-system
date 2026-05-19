@@ -18,7 +18,7 @@ export class UsersService {
       select: ["id", "email", "name", "role", "isActive", "createdAt", "updatedAt"],
       order: { createdAt: "DESC" },
     });
-    return users;
+    return users as UserResponseDto[];
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
@@ -27,48 +27,37 @@ export class UsersService {
       select: ["id", "email", "name", "role", "isActive", "createdAt", "updatedAt"],
     });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    return user;
+    return user as UserResponseDto;
   }
 
-  async create(createUserDto: CreateUserDto, createdBy: string): Promise<UserResponseDto> {
-    // Check if email already exists
+  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const existing = await this.userRepository.findOne({ where: { email: createUserDto.email } });
     if (existing) throw new ConflictException("Email already registered");
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
       role: createUserDto.role || "user",
+      isActive: true,
     });
 
     const saved = await this.userRepository.save(user);
-
-    // Return without password
     const { password, ...result } = saved;
     return result as UserResponseDto;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, requestedBy: string, requesterRole: string): Promise<UserResponseDto> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
-    // Prevent user from escalating their own role
-    if (requestedBy === id && updateUserDto.role && requesterRole !== "admin") {
-      throw new ForbiddenException("You cannot change your own role");
+    if (updateUserDto.password) {
+      user.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    // If password is being updated, hash it (optional feature)
-    if ((updateUserDto as any).password) {
-      user.password = await bcrypt.hash((updateUserDto as any).password, 10);
-    }
-
-    // Update other fields
     Object.assign(user, updateUserDto);
     const updated = await this.userRepository.save(user);
-
     const { password, ...result } = updated;
     return result as UserResponseDto;
   }
@@ -80,9 +69,5 @@ export class UsersService {
     // Soft delete: set isActive = false
     user.isActive = false;
     await this.userRepository.save(user);
-  }
-
-  async hardDelete(id: string): Promise<void> {
-    await this.userRepository.delete(id);
   }
 }

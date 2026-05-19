@@ -9,7 +9,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ select: false }) // Jangan return password di query biasa
+  @Column({ select: false })
   password: string;
 
   @Column({ nullable: true })
@@ -19,7 +19,7 @@ export class User {
   role: string; // 'admin' | 'user'
 
   @Column({ default: true })
-  isActive: boolean; // Untuk soft delete/deactivate
+  isActive: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
