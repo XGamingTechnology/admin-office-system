@@ -30,7 +30,8 @@ export class UsersService {
     return user as UserResponseDto;
   }
 
-  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+  // ✅ FIX: createdBy optional (?)
+  async create(createUserDto: CreateUserDto, createdBy?: string): Promise<UserResponseDto> {
     const existing = await this.userRepository.findOne({ where: { email: createUserDto.email } });
     if (existing) throw new ConflictException("Email already registered");
 
@@ -48,16 +49,26 @@ export class UsersService {
     return result as UserResponseDto;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  // ✅ FIX: requestedBy & requesterRole optional (?)
+  // ✅ FIX: Gunakan updateUserDto.password langsung (karena sudah ditambahkan di DTO)
+  async update(id: string, updateUserDto: UpdateUserDto, requestedBy?: string, requesterRole?: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
+    // Prevent non-admin from escalating their own role
+    if (requestedBy === id && updateUserDto.role && requesterRole !== "admin") {
+      throw new ForbiddenException("You cannot change your own role");
+    }
+
+    // Hash password if provided (type-safe now!)
     if (updateUserDto.password) {
       user.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
+    // Update other fields
     Object.assign(user, updateUserDto);
     const updated = await this.userRepository.save(user);
+
     const { password, ...result } = updated;
     return result as UserResponseDto;
   }
@@ -69,5 +80,9 @@ export class UsersService {
     // Soft delete: set isActive = false
     user.isActive = false;
     await this.userRepository.save(user);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.userRepository.delete(id);
   }
 }
