@@ -7,7 +7,8 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
 
-@Controller("api/office/admin/users")
+// ✅ FIX: Path tanpa /api karena reverse proxy (Caddy) strip prefix tersebut
+@Controller("office/admin/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -28,7 +29,6 @@ export class UsersController {
   @Roles("admin")
   async create(@Body() createUserDto: CreateUserDto, @Req() req: Request) {
     const userId = (req as any).user?.sub;
-    // ✅ Kirim 2 args: dto + optional userId
     return this.usersService.create(createUserDto, userId);
   }
 
@@ -36,7 +36,6 @@ export class UsersController {
   @Roles("admin")
   async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
     const user = (req as any).user;
-    // ✅ Kirim 4 args: id, dto, + 2 optional params
     return this.usersService.update(id, updateUserDto, user?.sub, user?.role);
   }
 
