@@ -224,9 +224,10 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 <input
                   type="number"
                   value={formData.jumlah || ""}
-                  onChange={(e) => setFormData({ ...formData, jumlah: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, jumlah: parseFloat(e.target.value) || 0 })}
                   required
                   min="0"
+                  step="0.01"
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
                 />
