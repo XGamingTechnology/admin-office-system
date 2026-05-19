@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const navItems = [
     { path: "/", label: "Dashboard", icon: "fa-chart-line" },
@@ -25,6 +25,13 @@ const Sidebar: React.FC = () => {
             {item.label}
           </Link>
         ))}
+        {/* Admin Control - Only visible for admin users */}
+        {user?.role === "admin" && (
+          <Link to="/admin" className={`w-full text-left px-4 py-2 rounded hover:bg-slate-700 transition flex items-center gap-2 ${location.pathname === "/admin" ? "bg-slate-800 font-bold" : ""}`}>
+            <i className="fa-solid fa-users-gear w-6"></i>
+            Admin Control
+          </Link>
+        )}
       </nav>
       <div className="mt-auto pt-4 border-t border-slate-700 space-y-2">
         <button onClick={() => window.confirm("Reset semua data demo?") && window.location.reload()} className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition flex items-center justify-center gap-2">
