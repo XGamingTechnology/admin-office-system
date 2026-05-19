@@ -2,18 +2,15 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { TypeOrmModule } from "@nestjs/typeorm"; // ← ← ← TAMBAHKAN IMPORT INI
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-
-// Import guards & decorators
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RolesGuard } from "./guards/roles.guard";
 
-// ✅ TAMBAHKAN: Import UsersModule (yang menyediakan UserRepository)
+// ✅ TAMBAHKAN: Import UsersModule untuk akses UserRepository
 import { UsersModule } from "../users/users.module";
 
 @Module({
@@ -21,7 +18,7 @@ import { UsersModule } from "../users/users.module";
     PassportModule,
     ConfigModule,
 
-    // ✅ TAMBAHKAN: Import UsersModule untuk akses UserRepository
+    // ✅ TAMBAHKAN: Import UsersModule (yang export TypeOrmModule)
     UsersModule,
 
     JwtModule.registerAsync({
