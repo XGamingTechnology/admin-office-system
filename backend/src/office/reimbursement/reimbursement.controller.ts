@@ -19,7 +19,6 @@ export class ReimbursementController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
-  // GANTI method create() dengan ini:
   @Post()
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
@@ -27,7 +26,7 @@ export class ReimbursementController {
   async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File, @Req() req?: Request) {
     const userId = (req as any)?.user?.sub;
 
-    // ✅ FIX: Gunakan variable name 'receiptUrl' yang match dengan DTO/entity
+    // ✅ FIX: Start with receiptUrl from DTO (frontend may have already uploaded to Cloudinary)
     let finalReceiptUrl: string | undefined = createReimbursementDto.receiptUrl;
 
     // ✅ Jika ada file upload via multipart, upload ke Cloudinary & override
@@ -35,13 +34,13 @@ export class ReimbursementController {
       finalReceiptUrl = await this.cloudinaryService.uploadFile(file);
     }
 
+    // ✅ PASS receiptUrl (bukan fileUrl!) ke service
     return this.reimbursementService.create({
       ...createReimbursementDto,
-      receiptUrl: finalReceiptUrl, // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
+      receiptUrl: finalReceiptUrl,
       createdBy: userId,
     });
   }
-
   @Get()
   @Roles("admin", "user")
   findAll(@Req() req?: Request) {
