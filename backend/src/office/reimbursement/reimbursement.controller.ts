@@ -1,12 +1,13 @@
 // backend/src/office/reimbursement/reimbursement.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UsePipes, Req, UseGuards, ForbiddenException } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, Req, UseGuards, ForbiddenException } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request } from "express";
 
 import { ReimbursementService } from "./reimbursement.service";
 import { CreateReimbursementDto, UpdateReimbursementDto, ApproveReimbursementDto } from "./dto/reimbursement.dto";
 import { CloudinaryService } from "../../config/cloudinary.service";
-import { FormDataPipe } from "../../common/pipes/form-data.pipe";
+// ❌ HAPUS IMPORT INI JIKA TIDAK DIPAKAI LAGI:
+// import { FormDataPipe } from "../../common/pipes/form-data.pipe";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../../auth/guards/roles.guard";
 import { Roles } from "../../auth/decorators/roles.decorator";
@@ -19,17 +20,18 @@ export class ReimbursementController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
+  // ✅ FIX: HAPUS @UsePipes(new FormDataPipe()) agar JSON request tidak di-override
   @Post()
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
-  @UsePipes(new FormDataPipe())
+  // ❌ @UsePipes(new FormDataPipe())  ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←...... HAPUS INI!
   async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File, @Req() req?: Request) {
     const userId = (req as any)?.user?.sub;
 
-    // ✅ FIX: Start with receiptUrl from DTO (frontend may have already uploaded to Cloudinary)
+    // ✅ FIX: Start with receiptUrl from DTO (frontend may have already uploaded to Cloudinary via JSON)
     let finalReceiptUrl: string | undefined = createReimbursementDto.receiptUrl;
 
-    // ✅ Jika ada file upload via multipart, upload ke Cloudinary & override
+    // ✅ Jika ada file upload via multipart/form-data, upload ke Cloudinary & override
     if (file) {
       finalReceiptUrl = await this.cloudinaryService.uploadFile(file);
     }
@@ -37,10 +39,11 @@ export class ReimbursementController {
     // ✅ PASS receiptUrl (bukan fileUrl!) ke service
     return this.reimbursementService.create({
       ...createReimbursementDto,
-      receiptUrl: finalReceiptUrl,
+      receiptUrl: finalReceiptUrl, // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
       createdBy: userId,
     });
   }
+
   @Get()
   @Roles("admin", "user")
   findAll(@Req() req?: Request) {
@@ -111,7 +114,7 @@ export class ReimbursementController {
 
   // ✅ FIX: DELETE dengan RBAC ownership check
   @Delete(":id")
-  @Roles("admin", "user") // ← ← ← Izinkan admin DAN user
+  @Roles("admin", "user")
   async remove(@Param("id") id: string, @Req() req?: Request) {
     const user = (req as any)?.user;
     const userId = user?.sub;
