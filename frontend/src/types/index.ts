@@ -10,6 +10,7 @@ export interface Surat {
   perihal: string;
   pihak: string; // ← Frontend: 'pihak' (backend: 'asalSurat' / 'tujuanSurat')
   status: "Diterima" | "Didisposisikan" | "Dalam Proses" | "Selesai" | "Draft" | "Terkirim";
+  fileUrl?: string | null; // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
   createdAt?: string;
   updatedAt?: string;
 }
@@ -22,6 +23,10 @@ export interface Reimbursement {
   keterangan: string; // ← Frontend: 'keterangan' (backend: 'description')
   jumlah: number; // ← Frontend: 'jumlah' (backend: 'amount')
   status: "Draft" | "Disetujui" | "Ditolak" | "Dibayar"; // ← Frontend status
+  receiptUrl?: string | null; // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←......
+  notes?: string;
+  approvedBy?: string;
+  approvedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -33,10 +38,6 @@ export interface DashboardData {
   reimburse: Reimbursement[];
   logs: string[];
 }
-
-// Tambahkan di frontend/src/types.ts
-
-// frontend/src/types.ts - TAMBAHKAN DI BAGIAN BAWAH FILE
 
 // ✅ User type untuk Admin Control (dengan role)
 export interface User {
@@ -63,14 +64,6 @@ export interface UpdateUserPayload {
   isActive?: boolean;
 }
 
-// ✅ Update Auth User type (jika belum ada role)
-// Cari interface User di AuthContext dan tambahkan role:
-// export interface User {
-//   id: string;
-//   email: string;
-//   name?: string;
-//   role?: 'admin' | 'user';  // ← ← ← TAMBAHKAN INI
-// }
 // ✅ Type alias untuk kompatibilitas legacy
 export type AppState = DashboardData;
 
@@ -157,7 +150,8 @@ export const mapSuratMasukBackendToFrontend = (backend: any): Surat => ({
   tanggal: backend.tanggalSurat,
   perihal: backend.perihal,
   pihak: backend.asalSurat,
-  status: mapSuratStatusToFrontend(backend.status), // Transform status for display
+  status: mapSuratStatusToFrontend(backend.status),
+  fileUrl: backend.fileUrl || backend.file_url || null, // ← ← ← Handle both naming conventions
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
@@ -168,6 +162,7 @@ export const mapSuratMasukFrontendToBackend = (frontend: Omit<Surat, "id">) => (
   asalSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
+  fileUrl: frontend.fileUrl || null, // ← ← ← Include fileUrl
   // ❌ NO status field for CREATE
 });
 
@@ -177,6 +172,7 @@ export const mapSuratMasukFrontendToBackendForUpdate = (frontend: Surat) => ({
   asalSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
+  fileUrl: frontend.fileUrl || null, // ← ← ← Include fileUrl
   status: mapSuratStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });
 
@@ -190,6 +186,7 @@ export const mapSuratKeluarBackendToFrontend = (backend: any): Surat => ({
   perihal: backend.perihal,
   pihak: backend.tujuanSurat,
   status: mapSuratStatusToFrontend(backend.status),
+  fileUrl: backend.fileUrl || backend.file_url || null, // ← ← ← Handle both naming conventions
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
@@ -201,6 +198,7 @@ export const mapSuratKeluarFrontendToBackend = (frontend: Omit<Surat, "id">) => 
     tujuanSurat: frontend.pihak,
     perihal: frontend.perihal,
     tanggalSurat: frontend.tanggal,
+    fileUrl: frontend.fileUrl || null, // ← ← ← Include fileUrl
   };
   // Explicitly exclude status for CREATE operations
   return result;
@@ -212,6 +210,7 @@ export const mapSuratKeluarFrontendToBackendForUpdate = (frontend: Surat) => ({
   tujuanSurat: frontend.pihak,
   perihal: frontend.perihal,
   tanggalSurat: frontend.tanggal,
+  fileUrl: frontend.fileUrl || null, // ← ← ← Include fileUrl
   status: mapSuratStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });
 
@@ -225,6 +224,10 @@ export const mapReimbursementBackendToFrontend = (backend: any): Reimbursement =
   keterangan: backend.description,
   jumlah: backend.amount,
   status: mapReimbursementStatusToFrontend(backend.status),
+  receiptUrl: backend.receiptUrl || backend.receipt_url || null, // ← ← ← Handle both naming conventions
+  notes: backend.notes,
+  approvedBy: backend.approvedBy,
+  approvedAt: backend.approvedAt,
   createdAt: backend.createdAt,
   updatedAt: backend.updatedAt,
 });
@@ -236,6 +239,7 @@ export const mapReimbursementFrontendToBackend = (frontend: Omit<Reimbursement, 
   description: frontend.keterangan,
   amount: frontend.jumlah,
   expenseDate: frontend.tanggal,
+  receiptUrl: frontend.receiptUrl || null, // ← ← ← Include receiptUrl
   // ❌ NO status field for CREATE
 });
 
@@ -246,5 +250,6 @@ export const mapReimbursementFrontendToBackendForUpdate = (frontend: Reimburseme
   description: frontend.keterangan,
   amount: frontend.jumlah,
   expenseDate: frontend.tanggal,
+  receiptUrl: frontend.receiptUrl || null, // ← ← ← Include receiptUrl
   status: mapReimbursementStatusToBackend(frontend.status), // ✓ Include status for UPDATE
 });
