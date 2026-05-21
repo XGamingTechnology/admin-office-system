@@ -36,8 +36,7 @@ export class Reimbursement {
   })
   status: ReimbursementStatus;
 
-  // Untuk reimbursement, field-nya receiptUrl:
-  @Column({ name: "receipt_url", nullable: true })
+  @Column({ name: "receiptUrl", nullable: true })
   receiptUrl: string;
 
   @Column({ nullable: true, name: "notes" })

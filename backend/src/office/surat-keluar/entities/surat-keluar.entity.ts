@@ -35,8 +35,7 @@ export class SuratKeluar {
   })
   status: SuratStatus;
 
-  // Same pattern - tambahkan ini:
-  @Column({ name: "file_url", nullable: true })
+  @Column({ name: "fileUrl", nullable: true })
   fileUrl: string;
 
   @Column({ nullable: true, name: "catatan" })
