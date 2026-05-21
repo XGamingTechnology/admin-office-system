@@ -1,3 +1,4 @@
+// backend/src/office/reimbursement/entities/reimbursement.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 export enum ReimbursementStatus {
@@ -12,46 +13,48 @@ export class Reimbursement {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ name: "employeeName" })
   employeeName: string;
 
-  @Column()
+  @Column({ name: "department" })
   department: string;
 
-  @Column()
+  @Column({ name: "description" })
   description: string;
 
-  @Column("decimal", { precision: 10, scale: 2 })
+  @Column("decimal", { precision: 10, scale: 2, name: "amount" })
   amount: number;
 
-  @Column({ type: "date" })
+  @Column({ type: "date", name: "expenseDate" })
   expenseDate: Date;
 
   @Column({
     type: "enum",
     enum: ReimbursementStatus,
     default: ReimbursementStatus.PENDING,
+    name: "status",
   })
   status: ReimbursementStatus;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: "receiptUrl" })
   receiptUrl: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: "notes" })
   notes: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: "approvedBy" })
   approvedBy: string;
 
-  @Column({ type: "date", nullable: true })
+  @Column({ type: "date", nullable: true, name: "approvedAt" })
   approvedAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: "updatedAt" })
   updatedAt: Date;
-  // ✅ Same fix:
-  @Column({ name: "created_by", nullable: true })
+
+  // ✅ FIX: Explicit camelCase column name (match database)
+  @Column({ name: "createdBy", nullable: true })
   createdBy: string;
 }

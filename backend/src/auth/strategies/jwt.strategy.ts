@@ -1,4 +1,4 @@
-// src/auth/strategies/jwt.strategy.ts
+// backend/src/auth/strategies/jwt.strategy.ts
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
@@ -20,10 +20,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+    });
+
     if (!user) {
       throw new UnauthorizedException("Token invalid");
     }
-    return { userId: user.id, email: user.email, role: user.role };
+
+    // ✅ MINIMAL RETURN OBJECT - hanya field yang pasti ada di User entity
+    return {
+      sub: user.id, // ← ← ← WAJIB: agar controller bisa akses user?.sub
+      email: user.email, // ← ← ← untuk logging/display
+      role: user.role, // ← ← ← WAJIB: untuk RBAC role check
+      name: user.name, // ← ← ← optional, untuk display
+    };
   }
 }

@@ -1,3 +1,4 @@
+// backend/src/office/surat-keluar/entities/surat-keluar.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 export enum SuratStatus {
@@ -11,40 +12,42 @@ export class SuratKeluar {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ name: "nomorSurat" })
   nomorSurat: string;
 
-  @Column()
+  @Column({ name: "tujuanSurat" })
   tujuanSurat: string;
 
-  @Column()
+  @Column({ name: "perihal" })
   perihal: string;
 
-  @Column({ type: "date" })
+  @Column({ type: "date", name: "tanggalSurat" })
   tanggalSurat: Date;
 
-  @Column({ type: "date", nullable: true })
+  @Column({ type: "date", nullable: true, name: "tanggalKirim" })
   tanggalKirim: Date;
 
   @Column({
     type: "enum",
     enum: SuratStatus,
     default: SuratStatus.PENDING,
+    name: "status",
   })
   status: SuratStatus;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: "fileUrl" })
   fileUrl: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: "catatan" })
   catatan: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: "updatedAt" })
   updatedAt: Date;
-  // ✅ TO THIS (explicit snake_case to match DB):
-  @Column({ name: "created_by", nullable: true })
+
+  // ✅ FIX: Explicit camelCase column name (match database)
+  @Column({ name: "createdBy", nullable: true })
   createdBy: string;
 }
