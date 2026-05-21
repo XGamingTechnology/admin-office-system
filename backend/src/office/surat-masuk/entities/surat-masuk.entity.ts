@@ -38,19 +38,20 @@ export class SuratMasuk {
   })
   status: SuratStatus;
 
-  @Column({ name: "fileUrl", nullable: true })
-  fileUrl: string;
-
   @Column({ nullable: true, name: "catatan" })
   catatan: string;
+
+  // ⚠️ created_by = snake_case (satu-satunya exception)
+  @Column({ name: "created_by", nullable: true })
+  createdBy: string;
+
+  // ✅ fileUrl = camelCase (MUST match database EXACT)
+  @Column({ name: "fileUrl", nullable: true })
+  fileUrl: string;
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;
 
   @UpdateDateColumn({ name: "updatedAt" })
   updatedAt: Date;
-
-  // ✅ FIX: Gunakan snake_case column name (match database)
-  @Column({ name: "created_by", nullable: true })
-  createdBy: string;
 }
