@@ -8,6 +8,7 @@ import { UsersModule } from "./users/users.module";
 import { ReimbursementModule } from "./office/reimbursement/reimbursement.module";
 import { SuratMasukModule } from "./office/surat-masuk/surat-masuk.module";
 import { SuratKeluarModule } from "./office/surat-keluar/surat-keluar.module";
+import { UploadModule } from "./upload/upload.module";
 
 @Module({
   imports: [
@@ -30,12 +31,12 @@ import { SuratKeluarModule } from "./office/surat-keluar/surat-keluar.module";
       }),
       inject: [ConfigService],
     }),
-
     AuthModule,
     UsersModule,
     ReimbursementModule,
     SuratMasukModule,
     SuratKeluarModule,
+    UploadModule,
   ],
 })
 export class AppModule {}

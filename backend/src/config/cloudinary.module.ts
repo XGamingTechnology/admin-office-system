@@ -1,10 +1,9 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { CloudinaryService } from './cloudinary.service';
-import { CloudinaryConfig } from './cloudinary.config';
+// backend/src/config/cloudinary.module.ts
+import { Module } from "@nestjs/common";
+import { CloudinaryService } from "./cloudinary.service";
+import { CloudinaryConfig } from "./cloudinary.config";
 
 @Module({
-  imports: [ConfigModule],
   providers: [CloudinaryConfig, CloudinaryService],
   exports: [CloudinaryService],
 })
