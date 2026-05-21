@@ -40,6 +40,10 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - CORS_ORIGIN=https://office.getopurtunity.online
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+
     ports:
       - "127.0.0.1:8080:3000" # 🔒 Hanya localhost, akses via Nginx proxy
     depends_on:
