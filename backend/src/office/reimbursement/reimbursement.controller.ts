@@ -19,18 +19,25 @@ export class ReimbursementController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
+  // GANTI method create() dengan ini:
   @Post()
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
   @UsePipes(new FormDataPipe())
   async create(@Body() createReimbursementDto: CreateReimbursementDto, @UploadedFile() file?: Express.Multer.File, @Req() req?: Request) {
-    let fileUrl: string | undefined;
-    if (file) fileUrl = await this.cloudinaryService.uploadFile(file);
-
     const userId = (req as any)?.user?.sub;
+
+    // ✅ FIX: Start with receiptUrl from DTO
+    let finalReceiptUrl: string | undefined = createReimbursementDto.receiptUrl;
+
+    // ✅ Jika ada file upload, upload ke Cloudinary & override
+    if (file) {
+      finalReceiptUrl = await this.cloudinaryService.uploadFile(file);
+    }
+
     return this.reimbursementService.create({
       ...createReimbursementDto,
-      fileUrl,
+      receiptUrl: finalReceiptUrl, // ← ← ← Perhatikan: receiptUrl, bukan fileUrl
       createdBy: userId,
     });
   }

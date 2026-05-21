@@ -14,13 +14,19 @@ import { Roles } from "../../auth/decorators/roles.decorator";
 export class SuratKeluarController {
   constructor(private readonly suratKeluarService: SuratKeluarService) {}
 
+  // GANTI method create() dengan ini:
   @Post()
   @Roles("admin", "user")
   @UsePipes(new FormDataPipe())
   async create(@Body() createSuratKeluarDto: CreateSuratKeluarDto, @Req() req?: Request) {
     const userId = (req as any)?.user?.sub;
+
+    // ✅ FIX: Pass through fileUrl from DTO (no file upload interceptor for this endpoint)
+    const finalFileUrl: string | undefined = createSuratKeluarDto.fileUrl;
+
     return this.suratKeluarService.create({
       ...createSuratKeluarDto,
+      fileUrl: finalFileUrl,
       createdBy: userId,
     });
   }

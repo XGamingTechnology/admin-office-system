@@ -19,18 +19,25 @@ export class SuratMasukController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
+  // GANTI method create() dengan ini:
   @Post()
   @Roles("admin", "user")
   @UseInterceptors(FileInterceptor("file"))
   @UsePipes(new FormDataPipe())
   async create(@Body() createSuratMasukDto: CreateSuratMasukDto, @UploadedFile() file?: Express.Multer.File, @Req() req?: Request) {
-    let fileUrl: string | undefined;
-    if (file) fileUrl = await this.cloudinaryService.uploadFile(file);
-
     const userId = (req as any)?.user?.sub;
+
+    // ✅ FIX: Start with fileUrl from DTO (frontend may have already uploaded to Cloudinary)
+    let finalFileUrl: string | undefined = createSuratMasukDto.fileUrl;
+
+    // ✅ Jika ada file upload via multipart, upload ke Cloudinary & override
+    if (file) {
+      finalFileUrl = await this.cloudinaryService.uploadFile(file);
+    }
+
     return this.suratMasukService.create({
       ...createSuratMasukDto,
-      fileUrl,
+      fileUrl: finalFileUrl, // ← ← ← Gunakan nilai yang sudah resolved
       createdBy: userId,
     });
   }
