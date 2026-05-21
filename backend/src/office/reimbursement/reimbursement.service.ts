@@ -1,4 +1,4 @@
-// src/office/reimbursement/reimbursement.service.ts
+// backend/src/office/reimbursement/reimbursement.service.ts
 import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -12,23 +12,22 @@ export class ReimbursementService {
     private reimbursementRepository: Repository<Reimbursement>
   ) {}
 
-  // ✅ CREATE: Support createdBy & fileUrl
-  async create(createReimbursementDto: CreateReimbursementDto & { createdBy?: string; fileUrl?: string }): Promise<Reimbursement> {
+  // ✅ FIX: Gunakan receiptUrl (bukan fileUrl!) yang match dengan DTO & entity
+  async create(createReimbursementDto: CreateReimbursementDto & { createdBy?: string; receiptUrl?: string }): Promise<Reimbursement> {
     const reimbursement = this.reimbursementRepository.create({
       ...createReimbursementDto,
       createdBy: createReimbursementDto.createdBy,
-      receiptUrl: createReimbursementDto.fileUrl, // Map fileUrl to receiptUrl
+      // ✅ FIX: receiptUrl from DTO, not fileUrl!
+      receiptUrl: createReimbursementDto.receiptUrl,
       // status defaults to PENDING via entity @Column({ default: ... })
     });
     return this.reimbursementRepository.save(reimbursement);
   }
 
-  // ✅ READ ALL: Return all (for admin)
   async findAll(): Promise<Reimbursement[]> {
     return this.reimbursementRepository.find({ order: { createdAt: "DESC" } });
   }
 
-  // ✅ READ BY USER: Filter by createdBy (for non-admin)
   async findAllByUser(userId: string): Promise<Reimbursement[]> {
     return this.reimbursementRepository.find({
       where: { createdBy: userId },
@@ -44,17 +43,17 @@ export class ReimbursementService {
     return reimbursement;
   }
 
-  // ✅ UPDATE: Support fileUrl
-  async update(id: string, updateReimbursementDto: UpdateReimbursementDto & { fileUrl?: string }): Promise<Reimbursement> {
+  // ✅ FIX: Update method juga pakai receiptUrl (bukan fileUrl!)
+  async update(id: string, updateReimbursementDto: UpdateReimbursementDto & { receiptUrl?: string }): Promise<Reimbursement> {
     const reimbursement = await this.findOne(id);
 
-    // Handle fileUrl update
-    if (updateReimbursementDto.fileUrl) {
-      reimbursement.receiptUrl = updateReimbursementDto.fileUrl;
+    // Handle receiptUrl update
+    if (updateReimbursementDto.receiptUrl) {
+      reimbursement.receiptUrl = updateReimbursementDto.receiptUrl;
     }
 
-    // Update other fields (excluding fileUrl which we handled above)
-    const { fileUrl, ...updateData } = updateReimbursementDto;
+    // Update other fields (excluding receiptUrl which we handled above)
+    const { receiptUrl, ...updateData } = updateReimbursementDto;
     Object.assign(reimbursement, updateData);
 
     return this.reimbursementRepository.save(reimbursement);
@@ -76,11 +75,9 @@ export class ReimbursementService {
     await this.reimbursementRepository.remove(reimbursement);
   }
 
-  // ✅ STATISTICS: Type-safe enum queries
   async getStatistics() {
     const total = await this.reimbursementRepository.count();
 
-    // Use enum values directly for type safety
     const pending = await this.reimbursementRepository.count({
       where: { status: ReimbursementStatus.PENDING },
     });
