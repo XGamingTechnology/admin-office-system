@@ -8,6 +8,14 @@ import * as bcrypt from "bcrypt";
 // ✅ PASTIKAN import User entity dari path yang benar
 import { User } from "../users/entities/user.entity";
 
+// ✅ Interface untuk JWT Payload (type-safe)
+interface JwtPayload {
+  email: string;
+  sub: string; // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←...... WAJIB ADA!
+  role: string;
+  name?: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -16,6 +24,9 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
+  /**
+   * Validate user credentials and return user object (without password)
+   */
   async validateUser(email: string, password: string): Promise<any> {
     console.log(`🔐 [validateUser] Looking for: ${email}`);
 
@@ -27,7 +38,7 @@ export class AuthService {
     console.log(`🔐 [validateUser] Found:`, {
       id: user?.id,
       email: user?.email,
-      role: user?.role, // ← ← ← Pastikan ini ter-log
+      role: user?.role,
       isActive: user?.isActive,
     });
 
@@ -35,15 +46,18 @@ export class AuthService {
       if (!user.isActive) {
         throw new UnauthorizedException("Account is deactivated");
       }
+      // Return user without password
       const { password, ...result } = user;
       return result;
     }
     return null;
   }
 
-  // ✅ CLEAN VERSION: login() method
+  /**
+   * Generate JWT token with proper payload including `sub: userId`
+   */
   async login(user: any) {
-    // 🐛 DEBUG: Log user object
+    // 🔍 DEBUG: Log user object received
     console.log("🔐 [AuthService] Login user object:", {
       id: user?.id,
       email: user?.email,
@@ -51,32 +65,49 @@ export class AuthService {
       name: user?.name,
     });
 
-    // ✅ Fallback: jika role undefined, default ke 'user' atau cek dari email
+    // ✅ VALIDATION: Pastikan user.id ada sebelum generate token
+    if (!user?.id) {
+      console.error("❌ [AuthService] CRITICAL: user.id is undefined! Cannot generate valid JWT for RBAC.");
+      throw new UnauthorizedException("Invalid user data: missing user ID");
+    }
+
+    // ✅ Fallback: jika role undefined, default ke 'user' atau cek dari email pattern
     const userRole = user?.role || (user?.email?.includes("admin") ? "admin" : "user");
 
-    // ✅ JWT payload - bersih, tanpa komentar panjang
-    const payload = {
+    // ✅ JWT Payload - HARUS mengandung `sub: user.id` untuk RBAC
+    const payload: JwtPayload = {
       email: user.email,
-      sub: user.id,
-      role: userRole, // ← ← ← Menggunakan fallback
+      sub: user.id, // ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ←...... PENTING!
+      role: userRole,
       name: user.name,
     };
 
-    console.log("🔐 [AuthService] JWT payload:", payload);
+    // 🔍 DEBUG: Log payload sebelum sign
+    console.log("🔐 [AuthService] JWT payload:", {
+      email: payload.email,
+      sub: payload.sub, // ← ← ← Pastikan ini ada & bukan undefined!
+      role: payload.role,
+      name: payload.name,
+    });
+
+    // ✅ Sign token
+    const accessToken = this.jwtService.sign(payload);
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
       user: {
         id: user.id,
         email: user.email,
-        role: userRole, // ← ← ← Juga kirim ke frontend
+        role: userRole,
         name: user.name,
         isActive: user.isActive,
       },
     };
   }
 
-  // ✅ REGISTER: Tambahkan method ini (dipanggil AuthController)
+  /**
+   * Register new user
+   */
   async register(registerDto: { email: string; password: string; name?: string; role?: string }) {
     // Check if email already exists
     const existing = await this.userRepository.findOne({
@@ -106,7 +137,9 @@ export class AuthService {
     return result;
   }
 
-  // ✅ GET PROFILE: Tambahkan method ini (dipanggil AuthController)
+  /**
+   * Get user profile by ID
+   */
   async getProfile(userId: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
