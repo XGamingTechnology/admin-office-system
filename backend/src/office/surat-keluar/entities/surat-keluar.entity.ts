@@ -47,7 +47,7 @@ export class SuratKeluar {
   @UpdateDateColumn({ name: "updatedAt" })
   updatedAt: Date;
 
-  // ✅ FIX: Explicit camelCase column name (match database)
-  @Column({ name: "createdBy", nullable: true })
+  // ✅ FIX: Gunakan snake_case column name (match database)
+  @Column({ name: "created_by", nullable: true })
   createdBy: string;
 }
