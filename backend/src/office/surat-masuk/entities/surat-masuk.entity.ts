@@ -47,7 +47,7 @@ export class SuratMasuk {
 
   @UpdateDateColumn()
   updatedAt: Date;
-  // Tambahkan di dalam class SuratMasuk:
-  @Column({ nullable: true })
+  // ✅ Same fix:
+  @Column({ name: "created_by", nullable: true })
   createdBy: string;
 }

@@ -44,7 +44,7 @@ export class SuratKeluar {
 
   @UpdateDateColumn()
   updatedAt: Date;
-  // Tambahkan di dalam class SuratKeluar:
-  @Column({ nullable: true })
+  // ✅ TO THIS (explicit snake_case to match DB):
+  @Column({ name: "created_by", nullable: true })
   createdBy: string;
 }
