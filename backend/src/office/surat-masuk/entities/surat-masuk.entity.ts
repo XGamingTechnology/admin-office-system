@@ -38,7 +38,8 @@ export class SuratMasuk {
   })
   status: SuratStatus;
 
-  @Column({ nullable: true, name: "fileUrl" })
+  // ✅ FIX: Explicit snake_case column name (match database)
+  @Column({ name: "file_url", nullable: true })
   fileUrl: string;
 
   @Column({ nullable: true, name: "catatan" })
