@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Reimbursement as ReimbursementType } from "../types";
 import { fmtRupiah, getStatusColor } from "../utils/helpers";
+import { useAuth } from "../context/AuthContext"; // ← ← ← TAMBAHKAN IMPORT INI
 
 interface ReimbursementProps {
   data: ReimbursementType[];
@@ -11,13 +12,19 @@ interface ReimbursementProps {
 }
 
 const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, onDelete }) => {
+  // ✅ GET USER INFO dari AuthContext
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   // 🐛 DEBUG: Log props (bisa dihapus nanti)
   useEffect(() => {
     console.log("🔍 [DEBUG Reimbursement] Props:", {
       count: data?.length,
       hasHandlers: !!(onAdd && onUpdate && onDelete),
+      isAdmin,
+      currentUser: user?.email,
     });
-  }, [data, onAdd, onUpdate, onDelete]);
+  }, [data, onAdd, onUpdate, onDelete, isAdmin, user]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,7 +48,13 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     file: null,
   });
 
-  const filteredData = data.filter((r) => r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredData = data.filter(
+    (r) =>
+      r.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // ✅ Tambahkan filter by pengaju jika admin
+      (isAdmin && r.createdBy?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const openModal = (item?: ReimbursementType) => {
     if (item) {
@@ -127,6 +140,20 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
     totalNominal: data.reduce((sum, r) => sum + (r.jumlah || 0), 0),
   };
 
+  // 👤 Helper: Format nama pengaju (fallback ke email/ID)
+  const getPengajuName = (createdBy: string | null | undefined, userEmail?: string) => {
+    if (!createdBy) return "Unknown";
+    // Jika createdBy adalah email, ambil bagian sebelum @
+    if (createdBy.includes("@")) {
+      return createdBy.split("@")[0];
+    }
+    // Jika createdBy adalah UUID, tampilkan singkat
+    if (createdBy.length > 8) {
+      return `User •••${createdBy.slice(-4)}`;
+    }
+    return createdBy;
+  };
+
   return (
     <div className="fade-in space-y-6">
       {/* 🎯 Header Section */}
@@ -137,6 +164,13 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
             Reimbursement
           </h1>
           <p className="text-gray-600 text-sm mt-1">Kelola klaim reimbursement karyawan dengan sistem digital yang efisien</p>
+          {/* ✅ Tampilkan info user yang login */}
+          {user && (
+            <p className="text-xs text-gray-500 mt-1">
+              Login sebagai: <span className="font-medium text-emerald-600">{user.name || user.email}</span>
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${isAdmin ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{isAdmin ? "👑 Admin" : "👤 User"}</span>
+            </p>
+          )}
         </div>
         <button
           onClick={() => openModal()}
@@ -232,7 +266,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
       <div className="relative">
         <input
           type="text"
-          placeholder="🔍 Cari kategori atau keterangan..."
+          placeholder={isAdmin ? "🔍 Cari kategori, keterangan, atau pengaju..." : "🔍 Cari kategori atau keterangan..."}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full max-w-md pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all duration-200 shadow-sm hover:shadow-md"
@@ -249,6 +283,8 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                 <th className="p-4 font-semibold text-gray-700 text-sm">Tanggal</th>
                 <th className="p-4 font-semibold text-gray-700 text-sm">Kategori</th>
                 <th className="p-4 font-semibold text-gray-700 text-sm">Keterangan</th>
+                {/* ✅ KOLOM PENGAJU - Hanya untuk Admin */}
+                {isAdmin && <th className="p-4 font-semibold text-gray-700 text-sm">Pengaju</th>}
                 <th className="p-4 font-semibold text-gray-700 text-sm text-right">Jumlah</th>
                 <th className="p-4 font-semibold text-gray-700 text-sm">Status</th>
                 <th className="p-4 font-semibold text-gray-700 text-sm text-center">Aksi</th>
@@ -257,7 +293,7 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
             <tbody className="divide-y divide-gray-100">
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center">
+                  <td colSpan={isAdmin ? 7 : 6} className="p-12 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="p-4 bg-gray-100 rounded-full animate-pulse">
                         <i className="fa-solid fa-receipt text-4xl text-gray-400"></i>
@@ -283,6 +319,19 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                     <td className="p-4 text-sm text-gray-700 max-w-xs truncate" title={r.keterangan}>
                       {r.keterangan}
                     </td>
+
+                    {/* ✅ KOLOM PENGAJU - Hanya untuk Admin */}
+                    {isAdmin && (
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">{getPengajuName(r.createdBy).charAt(0).toUpperCase()}</div>
+                          <span className="text-sm text-gray-700" title={r.createdBy || ""}>
+                            {getPengajuName(r.createdBy, r.createdBy)}
+                          </span>
+                        </div>
+                      </td>
+                    )}
+
                     <td className="p-4 text-sm font-bold text-emerald-600 text-right">{fmtRupiah(r.jumlah)}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(r.status)}`}>{r.status}</span>
@@ -520,6 +569,20 @@ const Reimbursement: React.FC<ReimbursementProps> = ({ data, onAdd, onUpdate, on
                   <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(viewingItem.status)}`}>{viewingItem.status}</span>
                 </div>
               </div>
+
+              {/* ✅ TAMBAHKAN: Info Pengaju - Hanya untuk Admin */}
+              {isAdmin && viewingItem.createdBy && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                  <p className="text-xs text-blue-600 uppercase font-semibold mb-1.5">Diajukan Oleh</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">{getPengajuName(viewingItem.createdBy).charAt(0).toUpperCase()}</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{getPengajuName(viewingItem.createdBy, viewingItem.createdBy)}</p>
+                      <p className="text-xs text-gray-500 font-mono">{viewingItem.createdBy}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Main Info */}
               <div className="space-y-4">
